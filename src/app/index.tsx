@@ -96,6 +96,20 @@ export default function Dashboard() {
             <StatCard index={2} label="Expired" value={stats.expired} color={palette.red} icon="alert-circle" />
           </View>
 
+          {/* ---- Scan fridge → recipe (marquee feature) ---- */}
+          <PressScale onPress={() => router.push('/fridge')} style={styles.scanFridge}>
+            <LinearGradient colors={gradients.cook} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.scanFridgeInner}>
+              <View style={styles.scanFridgeIcon}>
+                <Ionicons name="camera" size={24} color="#fff" />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.scanFridgeTitle}>Scan your fridge</Text>
+                <Text style={styles.scanFridgeSub}>Snap a photo — get a dish from what you have</Text>
+              </View>
+              <Ionicons name="chevron-forward" size={22} color="rgba(255,255,255,0.9)" />
+            </LinearGradient>
+          </PressScale>
+
           {/* ---- Expiring soon ---- */}
           <SectionHeader title="Expiring soon" actionLabel={stats.expiringSoon.length ? 'Cook' : undefined} onAction={() => router.push('/recipe')} />
           {stats.expiringSoon.length === 0 ? (
@@ -196,6 +210,12 @@ const styles = StyleSheet.create({
 
   body: { paddingHorizontal: space.xl, marginTop: -space.xxxl },
   statRow: { flexDirection: 'row', gap: space.md, marginBottom: space.sm },
+
+  scanFridge: { marginTop: space.md },
+  scanFridgeInner: { flexDirection: 'row', alignItems: 'center', gap: space.md, padding: space.lg, borderRadius: radius.lg },
+  scanFridgeIcon: { width: 46, height: 46, borderRadius: radius.md, backgroundColor: 'rgba(255,255,255,0.22)', alignItems: 'center', justifyContent: 'center' },
+  scanFridgeTitle: { color: '#fff', fontSize: 17, fontFamily: font.bold },
+  scanFridgeSub: { color: 'rgba(255,255,255,0.9)', fontSize: 13, fontWeight: '500', marginTop: 1 },
 
   carousel: { gap: space.md, paddingVertical: space.xs, paddingRight: space.lg },
   celebrate: { flexDirection: 'row', alignItems: 'center', gap: space.md, padding: space.lg, borderRadius: radius.md },

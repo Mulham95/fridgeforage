@@ -47,6 +47,9 @@ caught a real regex bug letting "Strawberries" skip the berry shelf-life cap.
 
 ## Features
 
+- 📸 **Scan your fridge → instant recipe** — point the in-app camera at your open
+  fridge; Gemini vision identifies the ingredients and suggests a dish you can
+  make right now (and optionally adds them to your pantry).
 - 📷 **Barcode scanning** → product name via Open Food Facts, shelf life via the
   local database (no AI call needed).
 - 🧾 **Receipt photo** → Gemini vision extracts and normalizes the line items.
@@ -104,6 +107,7 @@ Engine, UI, and build pipeline complete and verified (typecheck ✅, Android
 bundle ✅, tests 18/18 ✅).
 
 **Recent additions:**
+- ✅ Scan-your-fridge flow — live in-app camera → AI ingredient detection → recipe
 - ✅ Web build — run the whole app in a browser via `react-native-web` (localStorage + no-op shims)
 - ✅ Edit-item screen (tap any item to edit name, quantity, unit, zone, shelf life)
 - ✅ Search and filter on inventory (text search + zone chips)

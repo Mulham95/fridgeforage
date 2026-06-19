@@ -87,6 +87,7 @@ export default function RootLayout() {
             <Stack.Screen name="add" options={{ title: 'Add item', presentation: 'modal' }} />
             <Stack.Screen name="edit" options={{ title: 'Edit item', presentation: 'modal' }} />
             <Stack.Screen name="scan" options={{ title: 'Scan barcode', presentation: 'modal' }} />
+            <Stack.Screen name="fridge" options={{ title: 'Scan your fridge', presentation: 'modal' }} />
             <Stack.Screen name="recipe" options={{ title: 'Cook something' }} />
           </Stack>
         </ThemeProvider>
