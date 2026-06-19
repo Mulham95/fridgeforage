@@ -1,34 +1,32 @@
 import { useRef, useState } from 'react';
-import { ActivityIndicator, Alert, Pressable, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, Alert, StyleSheet, Text, View } from 'react-native';
 import { CameraView, useCameraPermissions, type BarcodeScanningResult } from 'expo-camera';
 import { useRouter } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
 
-import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
-import { Spacing } from '@/constants/theme';
+import { GradientButton } from '@/components/ui/gradient-button';
+import { useColors, gradients, radius, space } from '@/theme/tokens';
 import { addScannedBarcode } from '@/engine/barcode';
 
 export default function ScanScreen() {
+  const c = useColors();
   const [permission, requestPermission] = useCameraPermissions();
   const router = useRouter();
   const handled = useRef(false);
   const [busy, setBusy] = useState(false);
 
-  if (!permission) {
-    return <ThemedView style={styles.center} />;
-  }
+  if (!permission) return <View style={[styles.center, { backgroundColor: c.bg }]} />;
 
   if (!permission.granted) {
     return (
-      <ThemedView style={styles.center}>
-        <ThemedText type="subtitle" style={styles.permTitle}>Camera access</ThemedText>
-        <ThemedText themeColor="textSecondary" style={styles.permText}>
-          FridgeForage needs the camera to scan barcodes.
-        </ThemedText>
-        <Pressable style={styles.permBtn} onPress={requestPermission}>
-          <ThemedText type="smallBold" style={{ color: '#fff' }}>Grant access</ThemedText>
-        </Pressable>
-      </ThemedView>
+      <View style={[styles.center, { backgroundColor: c.bg }]}>
+        <Ionicons name="camera" size={48} color={c.primary} />
+        <Text style={[styles.permTitle, { color: c.text }]}>Camera access</Text>
+        <Text style={[styles.permText, { color: c.textMuted }]}>
+          FridgeForage needs the camera to scan product barcodes.
+        </Text>
+        <GradientButton label="Grant access" colors={gradients.primary} onPress={requestPermission} />
+      </View>
     );
   }
 
@@ -42,7 +40,7 @@ export default function ScanScreen() {
         out.source === 'not_found'
           ? `Couldn't identify barcode ${res.data}. Try adding it by name instead.`
           : `${out.productName} added to your pantry.`;
-      Alert.alert(out.source === 'not_found' ? 'Not recognized' : 'Added', msg, [
+      Alert.alert(out.source === 'not_found' ? 'Not recognized' : 'Added ✓', msg, [
         { text: 'OK', onPress: () => router.back() },
       ]);
     } catch (e) {
@@ -59,8 +57,10 @@ export default function ScanScreen() {
       />
       <View style={styles.overlay} pointerEvents="none">
         <View style={styles.reticle} />
-        <ThemedText style={styles.hint}>{busy ? 'Looking it up…' : 'Point at a barcode'}</ThemedText>
-        {busy && <ActivityIndicator color="#fff" />}
+        <View style={styles.hintPill}>
+          {busy && <ActivityIndicator color="#fff" />}
+          <Text style={styles.hint}>{busy ? 'Looking it up…' : 'Point at a barcode'}</Text>
+        </View>
       </View>
     </View>
   );
@@ -68,11 +68,14 @@ export default function ScanScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#000' },
-  center: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: Spacing.four, gap: Spacing.three },
-  permTitle: { textAlign: 'center' },
-  permText: { textAlign: 'center' },
-  permBtn: { backgroundColor: '#208AEF', paddingHorizontal: Spacing.four, paddingVertical: Spacing.three, borderRadius: Spacing.three },
-  overlay: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, alignItems: 'center', justifyContent: 'center', gap: Spacing.three },
-  reticle: { width: 240, height: 140, borderWidth: 3, borderColor: '#fff', borderRadius: Spacing.three, opacity: 0.9 },
-  hint: { color: '#fff', fontWeight: '700', backgroundColor: 'rgba(0,0,0,0.5)', paddingHorizontal: Spacing.three, paddingVertical: Spacing.one, borderRadius: Spacing.two },
+  center: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: space.xxl, gap: space.lg },
+  permTitle: { fontSize: 22, fontWeight: '800', textAlign: 'center' },
+  permText: { fontSize: 15, fontWeight: '500', textAlign: 'center', marginBottom: space.sm },
+  overlay: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, alignItems: 'center', justifyContent: 'center', gap: space.xl },
+  reticle: { width: 250, height: 150, borderWidth: 3, borderColor: '#fff', borderRadius: radius.lg, opacity: 0.95 },
+  hintPill: {
+    flexDirection: 'row', alignItems: 'center', gap: space.sm,
+    backgroundColor: 'rgba(0,0,0,0.6)', paddingHorizontal: space.lg, paddingVertical: space.sm, borderRadius: radius.pill,
+  },
+  hint: { color: '#fff', fontWeight: '700', fontSize: 14 },
 });

@@ -1,19 +1,23 @@
 import { useState } from 'react';
-import { ActivityIndicator, Alert, Pressable, StyleSheet, TextInput, View } from 'react-native';
+import { ActivityIndicator, Alert, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
+import { Ionicons } from '@expo/vector-icons';
+import Animated, { FadeInDown } from 'react-native-reanimated';
 
-import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
-import { Spacing } from '@/constants/theme';
-import { useTheme } from '@/hooks/use-theme';
+import { GradientButton } from '@/components/ui/gradient-button';
+import { PressScale } from '@/components/ui/press-scale';
+import { useColors, gradients, radius, shadow, space } from '@/theme/tokens';
 import { addByName, runIntake } from '@/engine/intake';
 import type { StorageZone } from '@/engine/db';
 
 const ZONES: (StorageZone | 'auto')[] = ['auto', 'fridge', 'pantry', 'freezer'];
+const ZONE_LABEL: Record<StorageZone | 'auto', string> = {
+  auto: 'Auto', fridge: '🧊 Fridge', pantry: '🥫 Pantry', freezer: '❄️ Freezer',
+};
 
 export default function AddScreen() {
-  const theme = useTheme();
+  const c = useColors();
   const router = useRouter();
   const [name, setName] = useState('');
   const [qty, setQty] = useState('1');
@@ -45,9 +49,8 @@ export default function AddScreen() {
     setBusy(true);
     try {
       const out = await runIntake({ imageBase64: res.assets[0].base64 });
-      if (out.items.length === 0) {
-        Alert.alert('Nothing found', 'Could not read any food items from that photo.');
-      } else {
+      if (out.items.length === 0) Alert.alert('Nothing found', 'Could not read any food items from that photo.');
+      else {
         Alert.alert('Added', `Added ${out.items.length} item(s) from your receipt.`);
         router.back();
       }
@@ -58,83 +61,91 @@ export default function AddScreen() {
     }
   };
 
+  const inputStyle = [styles.input, { color: c.text, backgroundColor: c.surface }, shadow.card];
+
   return (
-    <ThemedView style={styles.container}>
-      <ThemedText type="small" themeColor="textSecondary">Item name</ThemedText>
-      <TextInput
-        value={name}
-        onChangeText={setName}
-        placeholder="e.g. Chicken Breast"
-        placeholderTextColor={theme.textSecondary}
-        autoFocus
-        style={[styles.input, { color: theme.text, backgroundColor: theme.backgroundElement }]}
-        onSubmitEditing={submit}
-        returnKeyType="done"
-      />
+    <ScrollView style={{ backgroundColor: c.bg }} contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
+      <Animated.View entering={FadeInDown.duration(350)} style={{ gap: space.sm }}>
+        <Text style={[styles.label, { color: c.textMuted }]}>Item name</Text>
+        <TextInput
+          value={name}
+          onChangeText={setName}
+          placeholder="e.g. Chicken Breast"
+          placeholderTextColor={c.textMuted}
+          autoFocus
+          style={inputStyle}
+          onSubmitEditing={submit}
+          returnKeyType="done"
+        />
+      </Animated.View>
 
-      <ThemedText type="small" themeColor="textSecondary">Quantity</ThemedText>
-      <TextInput
-        value={qty}
-        onChangeText={setQty}
-        keyboardType="number-pad"
-        style={[styles.input, { color: theme.text, backgroundColor: theme.backgroundElement }]}
-      />
+      <Animated.View entering={FadeInDown.delay(60).duration(350)} style={{ gap: space.sm }}>
+        <Text style={[styles.label, { color: c.textMuted }]}>Quantity</Text>
+        <TextInput value={qty} onChangeText={setQty} keyboardType="number-pad" style={inputStyle} />
+      </Animated.View>
 
-      <ThemedText type="small" themeColor="textSecondary">Storage zone</ThemedText>
-      <View style={styles.zones}>
-        {ZONES.map((z) => (
-          <Pressable
-            key={z}
-            onPress={() => setZone(z)}
-            style={[
-              styles.zone,
-              { backgroundColor: zone === z ? '#208AEF' : theme.backgroundElement },
-            ]}>
-            <ThemedText type="small" style={{ color: zone === z ? '#fff' : theme.text }}>
-              {z === 'auto' ? 'Auto' : z[0].toUpperCase() + z.slice(1)}
-            </ThemedText>
-          </Pressable>
-        ))}
+      <Animated.View entering={FadeInDown.delay(120).duration(350)} style={{ gap: space.sm }}>
+        <Text style={[styles.label, { color: c.textMuted }]}>Storage zone</Text>
+        <View style={styles.zones}>
+          {ZONES.map((z) => {
+            const active = zone === z;
+            return (
+              <PressScale
+                key={z}
+                onPress={() => setZone(z)}
+                style={[styles.zone, { backgroundColor: active ? c.primary : c.surface }, shadow.card]}>
+                <Text style={[styles.zoneText, { color: active ? c.onPrimary : c.text }]}>{ZONE_LABEL[z]}</Text>
+              </PressScale>
+            );
+          })}
+        </View>
+        <Text style={[styles.hint, { color: c.textMuted }]}>
+          “Auto” uses the built-in food database, or estimates a safe shelf life if unknown.
+        </Text>
+      </Animated.View>
+
+      <Animated.View entering={FadeInDown.delay(180).duration(350)}>
+        <GradientButton
+          label={busy ? '' : 'Add to pantry'}
+          colors={gradients.primary}
+          disabled={!name.trim() || busy}
+          onPress={submit}
+          icon={busy ? <ActivityIndicator color="#fff" /> : <Ionicons name="add-circle" size={20} color="#fff" />}
+        />
+      </Animated.View>
+
+      <View style={styles.dividerRow}>
+        <View style={[styles.line, { backgroundColor: c.border }]} />
+        <Text style={[styles.or, { color: c.textMuted }]}>or</Text>
+        <View style={[styles.line, { backgroundColor: c.border }]} />
       </View>
-      <ThemedText type="small" themeColor="textSecondary" style={styles.hint}>
-        “Auto” uses the built-in food database, or estimates a safe shelf life if unknown.
-      </ThemedText>
 
-      <Pressable
-        style={[styles.primary, { backgroundColor: '#208AEF', opacity: name.trim() && !busy ? 1 : 0.5 }]}
-        disabled={!name.trim() || busy}
-        onPress={submit}>
-        {busy ? <ActivityIndicator color="#fff" /> : <ThemedText type="smallBold" style={{ color: '#fff' }}>Add to pantry</ThemedText>}
-      </Pressable>
-
-      <View style={styles.divider}>
-        <ThemedText type="small" themeColor="textSecondary">or</ThemedText>
-      </View>
-
-      <View style={styles.altRow}>
-        <Pressable
-          style={[styles.alt, { backgroundColor: theme.backgroundElement }]}
-          onPress={() => router.push('/scan')}>
-          <ThemedText type="smallBold">📷 Scan barcode</ThemedText>
-        </Pressable>
-        <Pressable
-          style={[styles.alt, { backgroundColor: theme.backgroundElement }]}
-          onPress={snapReceipt}>
-          <ThemedText type="smallBold">🧾 Snap receipt</ThemedText>
-        </Pressable>
-      </View>
-    </ThemedView>
+      <Animated.View entering={FadeInDown.delay(240).duration(350)} style={styles.altRow}>
+        <PressScale onPress={() => router.push('/scan')} style={[styles.alt, { backgroundColor: c.surface }, shadow.card]}>
+          <Ionicons name="barcode-outline" size={26} color={c.primary} />
+          <Text style={[styles.altText, { color: c.text }]}>Scan barcode</Text>
+        </PressScale>
+        <PressScale onPress={snapReceipt} style={[styles.alt, { backgroundColor: c.surface }, shadow.card]}>
+          <Ionicons name="receipt-outline" size={26} color={c.primary} />
+          <Text style={[styles.altText, { color: c.text }]}>Snap receipt</Text>
+        </PressScale>
+      </Animated.View>
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: Spacing.three, gap: Spacing.two },
-  input: { borderRadius: Spacing.two, padding: Spacing.three, fontSize: 16 },
-  zones: { flexDirection: 'row', gap: Spacing.two },
-  zone: { flex: 1, alignItems: 'center', paddingVertical: Spacing.three, borderRadius: Spacing.two },
-  hint: { marginTop: Spacing.one },
-  primary: { alignItems: 'center', padding: Spacing.three, borderRadius: Spacing.three, marginTop: Spacing.three },
-  divider: { alignItems: 'center', paddingVertical: Spacing.two },
-  altRow: { flexDirection: 'row', gap: Spacing.three },
-  alt: { flex: 1, alignItems: 'center', padding: Spacing.three, borderRadius: Spacing.three },
+  container: { padding: space.xl, gap: space.lg },
+  label: { fontSize: 13, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.4 },
+  input: { borderRadius: radius.md, padding: space.lg, fontSize: 16, fontWeight: '600' },
+  zones: { flexDirection: 'row', gap: space.sm },
+  zone: { flex: 1, alignItems: 'center', paddingVertical: space.md, borderRadius: radius.sm },
+  zoneText: { fontSize: 13, fontWeight: '700' },
+  hint: { fontSize: 12, fontWeight: '500' },
+  dividerRow: { flexDirection: 'row', alignItems: 'center', gap: space.md },
+  line: { flex: 1, height: 1 },
+  or: { fontSize: 13, fontWeight: '600' },
+  altRow: { flexDirection: 'row', gap: space.md },
+  alt: { flex: 1, alignItems: 'center', gap: space.sm, paddingVertical: space.xl, borderRadius: radius.md },
+  altText: { fontSize: 14, fontWeight: '700' },
 });
