@@ -8,11 +8,11 @@
     "scheme": "fridgeforageapp",
     "userInterfaceStyle": "automatic",
     "ios": {
-      "icon": "./assets/expo.icon"
+      "icon": "./assets/images/icon.png"
     },
     "android": {
       "adaptiveIcon": {
-        "backgroundColor": "#E6F4FE",
+        "backgroundColor": "#10B981",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
         "backgroundImage": "./assets/images/android-icon-background.png",
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
@@ -30,17 +30,17 @@
       [
         "expo-splash-screen",
         {
-          "backgroundColor": "#208AEF",
+          "backgroundColor": "#0F766E",
           "android": {
             "image": "./assets/images/splash-icon.png",
-            "imageWidth": 76
+            "imageWidth": 170
           }
         }
       ],
       "expo-sqlite",
       [
         "expo-camera",
-        { "cameraPermission": "Allow FridgeForage to use the camera to scan barcodes." }
+        { "cameraPermission": "Allow FridgeForage to use the camera to scan barcodes and your fridge." }
       ],
       [
         "expo-image-picker",
