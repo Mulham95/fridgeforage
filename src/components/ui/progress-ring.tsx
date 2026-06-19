@@ -31,7 +31,10 @@ export function ProgressRing({ size = 96, stroke = 10, progress, color, trackCol
 
   return (
     <View style={{ width: size, height: size, alignItems: 'center', justifyContent: 'center' }}>
-      <Svg width={size} height={size} style={StyleSheet.absoluteFill}>
+      <Svg
+        width={size}
+        height={size}
+        style={[StyleSheet.absoluteFill, { transform: [{ rotate: '-90deg' }], transformOrigin: 'center' }]}>
         <Circle cx={size / 2} cy={size / 2} r={r} stroke={trackColor} strokeWidth={stroke} fill="none" />
         <AnimatedCircle
           cx={size / 2}
@@ -43,8 +46,6 @@ export function ProgressRing({ size = 96, stroke = 10, progress, color, trackCol
           strokeDasharray={circ}
           animatedProps={animatedProps}
           strokeLinecap="round"
-          rotation={-90}
-          origin={`${size / 2}, ${size / 2}`}
         />
       </Svg>
       {children}

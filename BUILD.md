@@ -10,6 +10,22 @@ the cloud.
 
 ---
 
+## 0. Test in your browser first (fastest)
+
+Before touching the native build, run the whole app in a browser:
+
+```bash
+npm install
+npm run web        # opens http://localhost:8081
+```
+
+On web, SQLite is replaced by a `localStorage` store and notifications are no-ops
+(see `src/engine/*.web.ts`), so the full UI, pantry, add/edit, search, and recipe
+flows all work. Add/receipt/recipe AI features need the proxy (stage A); barcode
+scanning needs a real camera, so it's best tested on the phone.
+
+---
+
 ## A. Deploy the Gemini proxy (Cloudflare Worker)
 
 The proxy holds your Gemini API key so it never ships inside the app.

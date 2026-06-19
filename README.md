@@ -10,6 +10,16 @@ go bad.
 
 ---
 
+## Screenshots
+
+<p align="center">
+  <img src="docs/screenshots/dashboard.png" width="300" alt="FridgeForage dashboard with an expiring item" />
+  &nbsp;
+  <img src="docs/screenshots/dashboard-empty.png" width="300" alt="FridgeForage empty-state dashboard" />
+</p>
+
+<p align="center"><em>Animated dashboard — freshness ring, count-up stats, expiring-soon carousel, storage breakdown, and a floating action bar. Shown here in the web build.</em></p>
+
 ## Why this project is interesting (the engineering story)
 
 The headline feature is mundane — track groceries. The interesting part is the
@@ -74,8 +84,16 @@ test/            Zero-dependency unit tests for the safety-critical modules
 npm install
 npm run typecheck   # tsc --noEmit
 npm test            # safety-clamp + validation unit tests (Node test runner)
-npm start           # Expo dev server
+npm run web         # 🌐 run in your browser at http://localhost:8081
+npm start           # Expo dev server (scan the QR with Expo Go for a device)
 ```
+
+### Try it in your browser — no phone needed
+`npm run web` runs the full app through `react-native-web`. On web, SQLite is
+swapped for a `localStorage`-backed store and OS notifications become no-ops (see
+the `*.web.ts` files in `src/engine/`), so you can exercise the entire UI and data
+flow before ever building the native APK. AI features still call the proxy when
+it's configured.
 
 See **[BUILD.md](BUILD.md)** for deploying the AI proxy and building the
 installable Android APK with EAS.
@@ -86,6 +104,7 @@ Engine, UI, and build pipeline complete and verified (typecheck ✅, Android
 bundle ✅, tests 18/18 ✅).
 
 **Recent additions:**
+- ✅ Web build — run the whole app in a browser via `react-native-web` (localStorage + no-op shims)
 - ✅ Edit-item screen (tap any item to edit name, quantity, unit, zone, shelf life)
 - ✅ Search and filter on inventory (text search + zone chips)
 - ✅ Swipe-to-delete gesture on inventory items

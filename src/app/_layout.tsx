@@ -1,7 +1,7 @@
 import { DarkTheme, DefaultTheme, ThemeProvider } from 'expo-router';
 import { Stack } from 'expo-router';
 import { useCallback, useEffect, useRef } from 'react';
-import { AppState, useColorScheme } from 'react-native';
+import { AppState, Platform, useColorScheme } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import * as Notifications from 'expo-notifications';
@@ -22,15 +22,17 @@ import { SHELF_LIFE_SEED_SQL } from '@/engine/seedData';
 
 SplashScreen.preventAutoHideAsync().catch(() => {});
 
-// Show reminders as a banner even when the app is foregrounded.
-Notifications.setNotificationHandler({
-  handleNotification: async () => ({
-    shouldShowBanner: true,
-    shouldShowList: true,
-    shouldPlaySound: false,
-    shouldSetBadge: false,
-  }),
-});
+// Show reminders as a banner even when the app is foregrounded (native only).
+if (Platform.OS !== 'web') {
+  Notifications.setNotificationHandler({
+    handleNotification: async () => ({
+      shouldShowBanner: true,
+      shouldShowList: true,
+      shouldPlaySound: false,
+      shouldSetBadge: false,
+    }),
+  });
+}
 
 export default function RootLayout() {
   const colorScheme = useColorScheme();
