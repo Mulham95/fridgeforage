@@ -81,6 +81,47 @@ EXPO_PUBLIC_FRIDGEFORAGE_API=https://fridgeforage-ai.<your-subdomain>.workers.de
 - Want it on the Play Store eventually? Use `--profile production` (builds an
   `.aab`) and `eas submit`.
 
+### Prefer Android Studio? (instead of EAS cloud)
+You can build the APK locally:
+```bash
+npx expo prebuild --platform android   # generates the native android/ project
+```
+Then open the generated **`android/`** folder in Android Studio and run
+**Build ▸ Build Bundle(s) / APK(s) ▸ Build APK(s)** (or `cd android && ./gradlew assembleRelease`).
+Requires the Android SDK + JDK (Android Studio installs both). The config-plugin
+permissions (camera, notifications) are applied automatically during prebuild.
+Note: after prebuild the `android/` dir is committed/generated — re-run prebuild
+after changing `app.json` plugins. EAS cloud is simpler if you'd rather not
+install the SDK.
+
+---
+
+## D. Deploy the web version (optional)
+
+The web build is a static SPA — host it anywhere. **Set the proxy URL first** so
+AI features work in the deployed site:
+
+```bash
+# .env already has EXPO_PUBLIC_FRIDGEFORAGE_API=<your worker url>
+npx expo export -p web        # outputs ./dist
+```
+
+Then deploy `dist/` to any static host. Cloudflare Pages pairs nicely (you're
+already using Cloudflare for the proxy):
+
+```bash
+npx wrangler pages deploy dist --project-name fridgeforage
+```
+
+Or drag-and-drop `dist/` into Netlify, or `vercel deploy dist`, or push to a
+`gh-pages` branch. Notes:
+- Deployed sites are served over **HTTPS**, so the in-browser **camera works**
+  (barcode + fridge scan) — unlike some `localhost` setups.
+- On web, data lives in the browser's `localStorage` (per-device), and OS
+  notifications are no-ops by design.
+- The Worker already sends `Access-Control-Allow-Origin: *`, so the deployed page
+  can call it.
+
 ---
 
 ## Using the full USDA FoodKeeper dataset (optional)
