@@ -1,0 +1,24 @@
+name = "fridgeforage-ai"
+main = "worker.js"
+compatibility_date = "2025-06-01"
+
+# Model choice (verified June 2026):
+#   gemini-2.5-flash : cheapest (~$0.30/M in, $2.50/M out). Default — fine for
+#                      receipt parsing + simple recipes. Supports structured output.
+#   gemini-3-flash   : ~67% pricier in, better reasoning/reliability. Swap in if
+#                      you see parsing mistakes on messy receipts.
+[vars]
+GEMINI_MODEL = "gemini-2.5-flash"
+
+# Secrets are NOT stored here. Set them with:
+#   npx wrangler secret put GEMINI_API_KEY
+#   npx wrangler secret put APP_SHARED_SECRET   # optional but recommended
+#
+# Deploy:
+#   npx wrangler deploy
+#
+# Then point the app at the Worker URL:
+#   EXPO_PUBLIC_FRIDGEFORAGE_API=https://fridgeforage-ai.<your-subdomain>.workers.dev
+#
+# If you set APP_SHARED_SECRET, also send it from the client. In app/llm.ts add
+# the header to postJson:  "x-app-secret": process.env.EXPO_PUBLIC_APP_SECRET

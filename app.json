@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "fridgeforage-app",
+    "name": "FridgeForage",
     "slug": "fridgeforage-app",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -17,7 +17,8 @@
         "backgroundImage": "./assets/images/android-icon-background.png",
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "package": "com.fridgeforage.app"
     },
     "web": {
       "output": "static",
@@ -34,7 +35,17 @@
             "imageWidth": 76
           }
         }
-      ]
+      ],
+      "expo-sqlite",
+      [
+        "expo-camera",
+        { "cameraPermission": "Allow FridgeForage to use the camera to scan barcodes." }
+      ],
+      [
+        "expo-image-picker",
+        { "cameraPermission": "Allow FridgeForage to photograph receipts." }
+      ],
+      "expo-notifications"
     ],
     "experiments": {
       "typedRoutes": true,

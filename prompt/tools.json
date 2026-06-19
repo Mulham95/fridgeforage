@@ -1,0 +1,94 @@
+{
+  "_comment": "Anthropic Messages API tool definitions for FridgeForage. Pass these in the `tools` array. Force a mode by setting tool_choice = { type: 'tool', name: 'submit_inventory_intake' } (or submit_recipe). The input_schema is what makes malformed JSON structurally impossible — enums and types are validated by the API before the tool_use block is returned. The client MUST still re-validate (see app/validation.ts): an enum can only be one of the allowed values, but the model can still pick the wrong allowed value, hallucinate a shelf life, or omit a field.",
+
+  "tools": [
+    {
+      "name": "submit_inventory_intake",
+      "description": "Submit the food items extracted and normalized from a receipt, photo, voice transcript, or typed list. Call exactly once. Discard non-food line items. Use conservative, shortest-safe shelf-life estimates.",
+      "input_schema": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["processing_status", "items"],
+        "properties": {
+          "processing_status": {
+            "type": "string",
+            "enum": ["SUCCESS", "PARTIAL", "EMPTY"],
+            "description": "SUCCESS = items extracted cleanly. PARTIAL = some input was unreadable. EMPTY = no usable food items found."
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["normalized_name", "quantity", "unit", "storage_zone", "estimated_shelf_life_days"],
+              "properties": {
+                "normalized_name": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 80,
+                  "description": "Clean, human-readable food name, e.g. 'Organic Chicken Breast'."
+                },
+                "quantity": {
+                  "type": "number",
+                  "minimum": 0,
+                  "description": "Consumer count or weight as a number. Default 1.0 if not stated."
+                },
+                "unit": {
+                  "type": "string",
+                  "enum": ["pcs", "bag", "box", "can", "bottle", "lbs", "oz", "g", "kg", "ml", "l", "bunch", "dozen"]
+                },
+                "storage_zone": {
+                  "type": "string",
+                  "enum": ["fridge", "pantry", "freezer"]
+                },
+                "estimated_shelf_life_days": {
+                  "type": "integer",
+                  "minimum": 1,
+                  "maximum": 730,
+                  "description": "Shortest SAFE number of days before the item should be used or discarded. Respect the category ceilings in the system prompt. Round down when unsure."
+                },
+                "barcode_gtin": {
+                  "type": ["string", "null"],
+                  "description": "GTIN/UPC only if literally present in the input. Otherwise null."
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+
+    {
+      "name": "submit_recipe",
+      "description": "Submit one fast, beginner-friendly recipe that consumes the expiring items the client provided. Call exactly once.",
+      "input_schema": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["title", "prep_time_minutes", "cook_time_minutes", "difficulty_rating", "expiring_items_utilized", "common_pantry_staples_required", "mobile_ui_steps"],
+        "properties": {
+          "title": { "type": "string", "minLength": 1, "maxLength": 80 },
+          "prep_time_minutes": { "type": "integer", "minimum": 0, "maximum": 240 },
+          "cook_time_minutes": { "type": "integer", "minimum": 0, "maximum": 240 },
+          "difficulty_rating": { "type": "string", "enum": ["Easy", "Medium", "Hard"] },
+          "expiring_items_utilized": {
+            "type": "array",
+            "items": { "type": "string" },
+            "minItems": 1,
+            "description": "Subset of the item names the client sent."
+          },
+          "common_pantry_staples_required": {
+            "type": "array",
+            "items": { "type": "string" }
+          },
+          "mobile_ui_steps": {
+            "type": "array",
+            "items": { "type": "string", "minLength": 1 },
+            "minItems": 4,
+            "maxItems": 8,
+            "description": "One imperative action per step. Do not number inside the string."
+          }
+        }
+      }
+    }
+  ]
+}
