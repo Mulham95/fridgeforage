@@ -2,15 +2,17 @@ import { useCallback, useEffect, useState } from 'react';
 import { ActivityIndicator, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
 import Animated, { FadeIn, FadeInDown } from 'react-native-reanimated';
 
 import { GradientButton } from '@/components/ui/gradient-button';
-import { useColors, gradients, radius, shadow, space } from '@/theme/tokens';
+import { useColors, font, gradients, radius, shadow, space } from '@/theme/tokens';
 import { getAllItems, getExpiringItems } from '@/engine/db';
 import { aiGenerateRecipe, type RecipeResult } from '@/engine/llm';
 
 export default function RecipeScreen() {
   const c = useColors();
+  const router = useRouter();
   const [names, setNames] = useState<string[]>([]);
   const [recipe, setRecipe] = useState<RecipeResult | null>(null);
   const [busy, setBusy] = useState(false);
@@ -44,7 +46,19 @@ export default function RecipeScreen() {
       <Text style={[styles.label, { color: c.textMuted }]}>Using your soon-to-expire items</Text>
       <View style={styles.chips}>
         {names.length === 0 ? (
-          <Text style={{ color: c.textMuted }}>No items yet — add some groceries first.</Text>
+          <Animated.View entering={FadeInDown.springify().damping(15)} style={[styles.emptyCard, { backgroundColor: c.surface }, shadow.card]}>
+            <Ionicons name="cart-outline" size={36} color={c.textMuted} />
+            <Text style={[styles.emptyTitle, { color: c.text }]}>No items yet</Text>
+            <Text style={[styles.emptySub, { color: c.textMuted }]}>
+              Add some groceries first, then come back for recipe ideas.
+            </Text>
+            <GradientButton
+              label="Add items"
+              colors={gradients.primary}
+              onPress={() => router.push('/add')}
+              icon={<Ionicons name="add-circle" size={18} color="#fff" />}
+            />
+          </Animated.View>
         ) : (
           names.map((n, i) => (
             <Animated.View key={n} entering={FadeInDown.delay(i * 50).springify().damping(16)} style={[styles.chip, { backgroundColor: c.surface }, shadow.card]}>
@@ -118,10 +132,10 @@ const styles = StyleSheet.create({
   label: { fontSize: 13, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.4 },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: space.sm },
   chip: { paddingHorizontal: space.lg, paddingVertical: space.sm, borderRadius: radius.pill },
-  chipText: { fontSize: 13, fontWeight: '700' },
+  chipText: { fontSize: 13, fontFamily: font.semibold },
   card: { borderRadius: radius.lg, overflow: 'hidden' },
   recipeHeader: { padding: space.xl, gap: space.md },
-  recipeTitle: { color: '#fff', fontSize: 22, fontWeight: '800', letterSpacing: -0.3 },
+  recipeTitle: { color: '#fff', fontSize: 22, fontFamily: font.bold, letterSpacing: -0.3 },
   metaRow: { flexDirection: 'row', gap: space.sm },
   metaPill: {
     flexDirection: 'row', alignItems: 'center', gap: 4,
@@ -129,10 +143,13 @@ const styles = StyleSheet.create({
   },
   metaText: { color: '#fff', fontSize: 12, fontWeight: '700' },
   recipeBody: { padding: space.xl, gap: space.sm },
-  section: { fontSize: 12, fontWeight: '800', letterSpacing: 0.6, marginTop: space.sm },
+  section: { fontSize: 12, fontFamily: font.bold, letterSpacing: 0.6, marginTop: space.sm },
   bodyText: { fontSize: 15, fontWeight: '600', lineHeight: 22 },
   step: { flexDirection: 'row', gap: space.md, alignItems: 'flex-start', marginTop: space.xs },
   stepNum: { width: 26, height: 26, borderRadius: 13, alignItems: 'center', justifyContent: 'center' },
-  stepNumText: { color: '#fff', fontSize: 13, fontWeight: '800' },
+  stepNumText: { color: '#fff', fontSize: 13, fontFamily: font.bold },
   stepText: { flex: 1, fontSize: 15, fontWeight: '500', lineHeight: 22, paddingTop: 2 },
+  emptyCard: { alignItems: 'center', gap: space.md, padding: space.xxl, borderRadius: radius.md, width: '100%' },
+  emptyTitle: { fontSize: 18, fontFamily: font.bold },
+  emptySub: { fontSize: 14, fontWeight: '500', textAlign: 'center', marginBottom: space.xs },
 });

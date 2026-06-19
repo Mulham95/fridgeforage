@@ -68,6 +68,18 @@ export type AppColors = typeof light;
 export const space = { xs: 4, sm: 8, md: 12, lg: 16, xl: 20, xxl: 28, xxxl: 40 } as const;
 export const radius = { sm: 12, md: 18, lg: 24, xl: 30, pill: 999 } as const;
 
+/**
+ * Spline Sans display font. The weight is baked into the family name, so use
+ * these instead of `fontWeight` for headings/numbers/buttons (mixing the two
+ * fake-bolds on Android). Body/secondary text keeps the system font.
+ */
+export const font = {
+  regular: 'SplineSans_400Regular',
+  medium: 'SplineSans_500Medium',
+  semibold: 'SplineSans_600SemiBold',
+  bold: 'SplineSans_700Bold',
+} as const;
+
 export const shadow = {
   card: {
     shadowColor: '#0B1A14',

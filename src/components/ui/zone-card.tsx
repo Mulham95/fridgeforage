@@ -1,7 +1,7 @@
 import { StyleSheet, Text, View } from 'react-native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 
-import { useColors, radius, shadow, space } from '@/theme/tokens';
+import { useColors, font, radius, shadow, space } from '@/theme/tokens';
 import { useCountUp } from '@/lib/useCountUp';
 
 export function ZoneCard({
@@ -32,6 +32,6 @@ export function ZoneCard({
 const styles = StyleSheet.create({
   card: { flex: 1, borderRadius: radius.md, padding: space.lg, alignItems: 'center', gap: 2 },
   emoji: { fontSize: 24, marginBottom: space.xs },
-  count: { fontSize: 22, fontWeight: '800' },
+  count: { fontSize: 22, fontFamily: font.bold },
   label: { fontSize: 12, fontWeight: '600' },
 });

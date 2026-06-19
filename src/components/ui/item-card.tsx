@@ -2,7 +2,7 @@ import { StyleSheet, Text, View } from 'react-native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 
 import { PressScale } from './press-scale';
-import { useColors, radius, shadow, space } from '@/theme/tokens';
+import { useColors, font, radius, shadow, space } from '@/theme/tokens';
 import { daysLeft, expiryColor, expiryLabel, ZONE_META } from '@/lib/expiry';
 import type { InventoryItem } from '@/engine/db';
 
@@ -82,10 +82,10 @@ const styles = StyleSheet.create({
   },
   accent: { width: 5, alignSelf: 'stretch', borderRadius: 3, marginVertical: -space.lg, marginLeft: -space.lg + 4 },
   body: { flex: 1, gap: 3 },
-  name: { fontSize: 16, fontWeight: '700' },
+  name: { fontSize: 16, fontFamily: font.semibold },
   sub: { fontSize: 13, fontWeight: '500' },
   badge: { paddingHorizontal: space.md, paddingVertical: space.xs, borderRadius: radius.pill },
-  badgeText: { fontSize: 12, fontWeight: '800' },
+  badgeText: { fontSize: 12, fontFamily: font.bold },
 
   compact: { width: 132, borderRadius: radius.md, padding: space.md, gap: space.xs },
   compactTop: {
@@ -96,8 +96,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginBottom: space.xs,
   },
-  compactDays: { fontSize: 22, fontWeight: '800', lineHeight: 24 },
+  compactDays: { fontSize: 22, fontFamily: font.bold, lineHeight: 24 },
   compactDaysLabel: { fontSize: 10, fontWeight: '700', textTransform: 'uppercase' },
-  compactName: { fontSize: 14, fontWeight: '700' },
+  compactName: { fontSize: 14, fontFamily: font.semibold },
   compactZone: { fontSize: 12, fontWeight: '500' },
 });

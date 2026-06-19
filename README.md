@@ -83,5 +83,13 @@ installable Android APK with EAS.
 ## Status
 
 Engine, UI, and build pipeline complete and verified (typecheck ✅, Android
-bundle ✅, tests 18/18 ✅). Roadmap: on-device receipt OCR, edit-item screen,
-home-screen widget.
+bundle ✅, tests 18/18 ✅).
+
+**Recent additions:**
+- ✅ Edit-item screen (tap any item to edit name, quantity, unit, zone, shelf life)
+- ✅ Search and filter on inventory (text search + zone chips)
+- ✅ Swipe-to-delete gesture on inventory items
+- ✅ Notification re-scheduling on app foreground
+- ✅ Recipe screen empty-state CTA
+
+**Roadmap:** on-device receipt OCR, home-screen widget.

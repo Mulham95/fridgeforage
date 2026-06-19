@@ -1,7 +1,7 @@
 import { StyleSheet, Text, View } from 'react-native';
 
 import { PressScale } from './press-scale';
-import { useColors, space } from '@/theme/tokens';
+import { useColors, font, space } from '@/theme/tokens';
 
 export function SectionHeader({
   title,
@@ -33,6 +33,6 @@ const styles = StyleSheet.create({
     marginBottom: space.md,
     marginTop: space.sm,
   },
-  title: { fontSize: 19, fontWeight: '800', letterSpacing: -0.2 },
-  action: { fontSize: 14, fontWeight: '700' },
+  title: { fontSize: 19, fontFamily: font.bold, letterSpacing: -0.2 },
+  action: { fontSize: 14, fontFamily: font.semibold },
 });

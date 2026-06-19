@@ -3,7 +3,7 @@ import { StyleSheet, Text, type StyleProp, type ViewStyle } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 
 import { PressScale } from './press-scale';
-import { radius, shadow, space } from '@/theme/tokens';
+import { font, radius, shadow, space } from '@/theme/tokens';
 
 type Props = {
   label: string;
@@ -40,5 +40,5 @@ const styles = StyleSheet.create({
     paddingHorizontal: space.xl,
     borderRadius: radius.lg,
   },
-  label: { color: '#fff', fontSize: 16, fontWeight: '800', letterSpacing: 0.2 },
+  label: { color: '#fff', fontSize: 16, fontFamily: font.bold, letterSpacing: 0.2 },
 });

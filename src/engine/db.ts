@@ -111,6 +111,47 @@ export async function deleteItem(id: string): Promise<void> {
   await db.runAsync("DELETE FROM inventory_items WHERE id = ?", id);
 }
 
+/** Fetch a single item by primary key, or null if not found. */
+export async function getItem(id: string): Promise<InventoryItem | null> {
+  const db = await getDb();
+  return db.getFirstAsync<InventoryItem>(
+    "SELECT * FROM inventory_items WHERE id = ?",
+    id
+  );
+}
+
+/** Update mutable fields and recompute expires_at. */
+export async function updateItem(
+  id: string,
+  fields: Partial<Pick<InventoryItem, 'normalized_name' | 'quantity' | 'unit' | 'storage_zone' | 'estimated_shelf_life_days'>>
+): Promise<void> {
+  const db = await getDb();
+  const existing = await getItem(id);
+  if (!existing) return;
+
+  const merged = { ...existing, ...fields };
+  // Recompute expires_at so the notification window stays consistent.
+  const expiresAt = merged.added_at + merged.estimated_shelf_life_days * 86_400_000;
+
+  await db.runAsync(
+    `UPDATE inventory_items
+        SET normalized_name = ?,
+            quantity = ?,
+            unit = ?,
+            storage_zone = ?,
+            estimated_shelf_life_days = ?,
+            expires_at = ?
+      WHERE id = ?`,
+    merged.normalized_name,
+    merged.quantity,
+    merged.unit,
+    merged.storage_zone,
+    merged.estimated_shelf_life_days,
+    expiresAt,
+    id
+  );
+}
+
 /** Seed the bundled curated shelf-life data on first launch. */
 export async function initDatabase(seedSql: string): Promise<void> {
   await getDb();

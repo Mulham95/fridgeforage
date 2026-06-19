@@ -2,7 +2,7 @@ import { StyleSheet, Text, View } from 'react-native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { Ionicons } from '@expo/vector-icons';
 
-import { useColors, radius, shadow, space } from '@/theme/tokens';
+import { useColors, font, radius, shadow, space } from '@/theme/tokens';
 import { useCountUp } from '@/lib/useCountUp';
 
 type Props = {
@@ -47,6 +47,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginBottom: space.xs,
   },
-  value: { fontSize: 26, fontWeight: '800' },
-  label: { fontSize: 12, fontWeight: '600' },
+  value: { fontSize: 26, fontFamily: font.bold },
+  label: { fontSize: 12, fontFamily: font.medium },
 });

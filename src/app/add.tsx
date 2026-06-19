@@ -7,7 +7,7 @@ import Animated, { FadeInDown } from 'react-native-reanimated';
 
 import { GradientButton } from '@/components/ui/gradient-button';
 import { PressScale } from '@/components/ui/press-scale';
-import { useColors, gradients, radius, shadow, space } from '@/theme/tokens';
+import { useColors, font, gradients, radius, shadow, space } from '@/theme/tokens';
 import { addByName, runIntake } from '@/engine/intake';
 import type { StorageZone } from '@/engine/db';
 
@@ -136,16 +136,16 @@ export default function AddScreen() {
 
 const styles = StyleSheet.create({
   container: { padding: space.xl, gap: space.lg },
-  label: { fontSize: 13, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.4 },
+  label: { fontSize: 13, fontFamily: font.bold, textTransform: 'uppercase', letterSpacing: 0.4 },
   input: { borderRadius: radius.md, padding: space.lg, fontSize: 16, fontWeight: '600' },
   zones: { flexDirection: 'row', gap: space.sm },
   zone: { flex: 1, alignItems: 'center', paddingVertical: space.md, borderRadius: radius.sm },
-  zoneText: { fontSize: 13, fontWeight: '700' },
+  zoneText: { fontSize: 13, fontFamily: font.semibold },
   hint: { fontSize: 12, fontWeight: '500' },
   dividerRow: { flexDirection: 'row', alignItems: 'center', gap: space.md },
   line: { flex: 1, height: 1 },
   or: { fontSize: 13, fontWeight: '600' },
   altRow: { flexDirection: 'row', gap: space.md },
   alt: { flex: 1, alignItems: 'center', gap: space.sm, paddingVertical: space.xl, borderRadius: radius.md },
-  altText: { fontSize: 14, fontWeight: '700' },
+  altText: { fontSize: 14, fontFamily: font.semibold },
 });

@@ -13,7 +13,7 @@ import { ZoneCard } from '@/components/ui/zone-card';
 import { ItemCard, ExpiringCard } from '@/components/ui/item-card';
 import { SectionHeader } from '@/components/ui/section-header';
 import { PressScale } from '@/components/ui/press-scale';
-import { useColors, gradients, palette, radius, shadow, space } from '@/theme/tokens';
+import { useColors, font, gradients, palette, radius, shadow, space } from '@/theme/tokens';
 import { loadDashboard, type DashboardStats } from '@/lib/stats';
 import { deleteItem } from '@/engine/db';
 
@@ -109,7 +109,7 @@ export default function Dashboard() {
           ) : (
             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.carousel}>
               {stats.expiringSoon.map((it, i) => (
-                <ExpiringCard key={it.id} item={it} index={i} onPress={() => router.push('/recipe')} />
+                <ExpiringCard key={it.id} item={it} index={i} onPress={() => router.push({ pathname: '/edit', params: { id: it.id } })} />
               ))}
             </ScrollView>
           )}
@@ -143,6 +143,7 @@ export default function Dashboard() {
                   key={it.id}
                   item={it}
                   index={i}
+                  onPress={() => router.push({ pathname: '/edit', params: { id: it.id } })}
                   onLongPress={() => confirmDelete(it.id, it.normalized_name)}
                 />
               ))}
@@ -183,14 +184,14 @@ const styles = StyleSheet.create({
   heroRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   heroText: { flex: 1, gap: space.sm },
   greeting: { color: 'rgba(255,255,255,0.9)', fontSize: 15, fontWeight: '600' },
-  heroTitle: { color: '#fff', fontSize: 30, fontWeight: '800', lineHeight: 34, letterSpacing: -0.5 },
+  heroTitle: { color: '#fff', fontSize: 30, fontFamily: font.bold, lineHeight: 34, letterSpacing: -0.5 },
   heroChip: {
     flexDirection: 'row', alignItems: 'center', gap: 5, alignSelf: 'flex-start',
     backgroundColor: 'rgba(255,255,255,0.2)', paddingHorizontal: space.md, paddingVertical: 5, borderRadius: radius.pill, marginTop: space.xs,
   },
   heroChipText: { color: '#fff', fontSize: 12, fontWeight: '700' },
   ringCenter: { alignItems: 'center' },
-  ringValue: { color: '#fff', fontSize: 22, fontWeight: '800' },
+  ringValue: { color: '#fff', fontSize: 22, fontFamily: font.bold },
   ringLabel: { color: 'rgba(255,255,255,0.85)', fontSize: 11, fontWeight: '600' },
 
   body: { paddingHorizontal: space.xl, marginTop: -space.xxxl },
@@ -199,7 +200,7 @@ const styles = StyleSheet.create({
   carousel: { gap: space.md, paddingVertical: space.xs, paddingRight: space.lg },
   celebrate: { flexDirection: 'row', alignItems: 'center', gap: space.md, padding: space.lg, borderRadius: radius.md },
   celebrateEmoji: { fontSize: 30 },
-  celebrateTitle: { fontSize: 16, fontWeight: '800' },
+  celebrateTitle: { fontSize: 16, fontFamily: font.bold },
   celebrateSub: { fontSize: 13, fontWeight: '500', marginTop: 2 },
 
   zoneRow: { flexDirection: 'row', gap: space.md },
@@ -217,5 +218,5 @@ const styles = StyleSheet.create({
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: space.xs,
     height: 52, borderRadius: radius.pill,
   },
-  fabAddText: { color: '#fff', fontSize: 16, fontWeight: '800' },
+  fabAddText: { color: '#fff', fontSize: 16, fontFamily: font.bold },
 });
