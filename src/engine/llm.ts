@@ -1,18 +1,5 @@
-/**
- * Thin client for the FridgeForage AI endpoint.
- *
- * IMPORTANT: never call Gemini directly from the device with a real API key
- * baked into the app — it WILL be extracted. Stand up a tiny proxy (Cloudflare
- * Worker, see proxy/worker.js) that holds the GEMINI_API_KEY, injects the system
- * prompt, and enforces the per-mode responseSchema. This module talks to THAT proxy.
- *
- * The proxy is expected to call Gemini generateContent with:
- *   - systemInstruction = contents of prompt/system_prompt.md
- *   - generationConfig.responseMimeType = "application/json"
- *   - generationConfig.responseSchema   = the intake or recipe schema
- *   - model = a cheap/fast Flash model (env GEMINI_MODEL)
- * and return the parsed JSON object (candidates[0].content.parts[0].text).
- */
+// Thin client for the AI proxy (proxy/worker.js). The Gemini key lives in the
+// proxy, never in the app — this module only talks to that proxy.
 
 const ENDPOINT = process.env.EXPO_PUBLIC_FRIDGEFORAGE_API ?? "https://api.fridgeforage.app";
 const TIMEOUT_MS = 20_000;

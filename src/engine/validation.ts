@@ -1,13 +1,5 @@
-/**
- * Defensive validation/coercion of model output. Even with tool-use + JSON
- * schema, the model is a probabilistic generator: it can pick a wrong-but-valid
- * enum, hallucinate a shelf life, or send "Fridge" / "lb". We NEVER insert raw
- * model output. Everything lands here first and is coerced to satisfy the DB's
- * CHECK constraints, so an INSERT can never throw on bad enum data.
- *
- * Zero dependencies (no zod) to keep the RN bundle small; swap in zod if you
- * already ship it.
- */
+// Defensive coercion of untrusted model output: every field is coerced to satisfy
+// the DB CHECK constraints, so an INSERT can never throw on a bad value.
 import type { InventoryItem, StorageZone } from "./db";
 import { clampShelfLife } from "./safetyLimits";
 

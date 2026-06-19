@@ -1,17 +1,6 @@
-/**
- * Local expiry notifications (expo-notifications).
- *
- * Two production realities the original blueprint got wrong:
- *  1. The notification time must derive from the SAME `expires_at` timestamp the
- *     "expiring soon" query uses — not a hardcoded "+48h". We fire at
- *     `expires_at - LEAD_TIME` (default 24h before expiry).
- *  2. iOS silently caps PENDING local notifications at 64 per app; extras are
- *     dropped. A single big grocery haul blows past that. So we only ever
- *     schedule the soonest N, cancel everything first, and RESCHEDULE on app
- *     foreground so the window slides forward.
- *
- * Call scheduleExpiryNotifications() after every intake and on app resume.
- */
+// Local expiry notifications. Fire at `expires_at - 24h`, and only ever schedule
+// the soonest N (iOS caps pending notifications at 64), rescheduling on app
+// foreground so the window slides forward.
 import { Platform } from "react-native";
 import * as Notifications from "expo-notifications";
 import { getDb, type InventoryItem } from "./db";

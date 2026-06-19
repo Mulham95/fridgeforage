@@ -1,13 +1,5 @@
-/**
- * SQLite setup for FridgeForage (expo-sqlite, new async API).
- *
- * Two logical tables:
- *  - shelf_life_rules : read-only reference data, seeded from the FoodKeeper ETL
- *    (etl/build_shelf_life.mjs -> shelf_life_rules.sql). Ship the .sql as a
- *    bundled asset and run it once on first launch.
- *  - inventory_items  : the user's pantry. `expires_at` is computed at insert
- *    time so notifications and the "expiring soon" query share one timestamp.
- */
+// SQLite store (expo-sqlite). `expires_at` is computed at insert time so the
+// reminder and the "expiring soon" query share one timestamp.
 import * as SQLite from "expo-sqlite";
 
 export type StorageZone = "fridge" | "pantry" | "freezer";
