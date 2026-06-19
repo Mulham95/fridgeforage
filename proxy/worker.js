@@ -126,7 +126,8 @@ async function callGemini(env, parts, schema) {
 
   if (!res.ok) {
     const detail = await res.text().catch(() => "");
-    throw new Error(`Gemini ${res.status}: ${detail.slice(0, 300)}`);
+    console.error(`Gemini ${res.status}: ${detail.slice(0, 500)}`); // server log only
+    throw new Error(`upstream_${res.status}`); // generic — never echoed to the client
   }
   const data = await res.json();
   const text = data?.candidates?.[0]?.content?.parts?.[0]?.text;
@@ -150,6 +151,11 @@ export default {
       body = await request.json();
     } catch {
       return json({ error: "invalid JSON body" }, 400);
+    }
+
+    // Reject oversized image payloads (~6.7MB image as base64) to limit abuse/cost.
+    if (typeof body.imageBase64 === "string" && body.imageBase64.length > 9_000_000) {
+      return json({ error: "image too large" }, 413);
     }
 
     try {
@@ -178,8 +184,9 @@ export default {
 
       return json({ error: "not found" }, 404);
     } catch (err) {
-      // Fail soft: the client treats a non-2xx / empty as "offline" and shows a manual path.
-      return json({ error: String(err.message || err) }, 502);
+      console.error(err); // detail stays server-side (wrangler tail)
+      // Fail soft + generic: the client treats a non-2xx / empty as "offline".
+      return json({ error: "upstream error" }, 502);
     }
   },
 };
