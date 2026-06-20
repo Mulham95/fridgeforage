@@ -9,6 +9,12 @@ compatibility_date = "2025-06-01"
 #                      you see parsing mistakes on messy receipts.
 [vars]
 GEMINI_MODEL = "gemini-2.5-flash"
+# Comma-separated list of browser origins allowed to call the proxy. Mobile/
+# native requests send no Origin header and are not affected (they're gated by
+# APP_SHARED_SECRET instead, if set).
+ALLOWED_ORIGINS = "https://fridgeforage-web.fridgeforage-api.workers.dev,https://fridgeforage.pages.dev"
+# Per-IP rate limit (requests per 60s sliding window).
+RATE_LIMIT_PER_MIN = "20"
 
 # Secrets are NOT stored here. Set them with:
 #   npx wrangler secret put GEMINI_API_KEY

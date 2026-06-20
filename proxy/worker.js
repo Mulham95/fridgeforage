@@ -24,17 +24,60 @@
 
 const GEMINI_BASE = "https://generativelanguage.googleapis.com/v1beta/models";
 
-const CORS = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Methods": "POST, OPTIONS",
-  "Access-Control-Allow-Headers": "Content-Type, x-app-secret",
-};
+// Origins that are allowed to call the proxy from a browser. Set ALLOWED_ORIGINS
+// in wrangler.toml (comma-separated). The mobile app sends no Origin header and
+// is always allowed (those requests are gated by APP_SHARED_SECRET if set).
+function parseAllowed(env) {
+  return (env.ALLOWED_ORIGINS || "")
+    .split(",")
+    .map((s) => s.trim())
+    .filter(Boolean);
+}
 
-const json = (obj, status = 200) =>
+function corsHeaders(origin, allowed) {
+  const ok = !origin || allowed.includes(origin);
+  return {
+    "Access-Control-Allow-Origin": ok ? origin || "*" : allowed[0] || "null",
+    "Access-Control-Allow-Methods": "POST, OPTIONS",
+    "Access-Control-Allow-Headers": "Content-Type, x-app-secret",
+    "Vary": "Origin",
+  };
+}
+
+const json = (obj, status = 200, extraHeaders = {}) =>
   new Response(JSON.stringify(obj), {
     status,
-    headers: { "Content-Type": "application/json", ...CORS },
+    headers: { "Content-Type": "application/json", ...extraHeaders },
   });
+
+// --- Per-IP rate limit using the Workers cache (no KV required) ------------
+// Bucket per (IP, minute). Cache API stores GET responses keyed by URL within
+// the colo; that's enough to bound abuse from any single client without paid
+// rate-limiting. For real attack traffic add a Cloudflare WAF rule on top.
+async function rateLimit(request, env) {
+  const limit = Number(env.RATE_LIMIT_PER_MIN || 20);
+  const ip = request.headers.get("CF-Connecting-IP") || "unknown";
+  const bucket = Math.floor(Date.now() / 60_000);
+  // Use the request's own origin so the key URL is valid + cacheable.
+  const origin = new URL(request.url).origin;
+  const key = new Request(`${origin}/__rl/${encodeURIComponent(ip)}/${bucket}`, {
+    method: "GET",
+  });
+  const cache = caches.default;
+  const hit = await cache.match(key);
+  const count = hit ? Number(await hit.text()) || 0 : 0;
+  if (count >= limit) return false;
+  const res = new Response(String(count + 1), {
+    headers: {
+      // Cache-Control alone isn't enough — Cloudflare also needs Content-Type
+      // and a finite max-age. 90s outlives the 60s bucket.
+      "Cache-Control": "public, max-age=90",
+      "Content-Type": "text/plain",
+    },
+  });
+  await cache.put(key, res);
+  return true;
+}
 
 // --- system prompt (keep in sync with prompt/system_prompt.md) -------------
 const SYSTEM_PROMPT = `You are the FridgeForage data engine. You convert messy mobile inputs (receipt text, fridge-shelf photos, voice transcripts, typed lists) into structured records that match the provided JSON schema EXACTLY. Output JSON only — no prose, no markdown.
@@ -137,12 +180,28 @@ async function callGemini(env, parts, schema) {
 
 export default {
   async fetch(request, env) {
-    if (request.method === "OPTIONS") return new Response(null, { headers: CORS });
-    if (request.method !== "POST") return json({ error: "POST only" }, 405);
+    const allowed = parseAllowed(env);
+    const origin = request.headers.get("Origin") || "";
+    const cors = corsHeaders(origin, allowed);
 
-    // Optional shared-secret gate.
+    if (request.method === "OPTIONS") return new Response(null, { headers: cors });
+    if (request.method !== "POST") return json({ error: "POST only" }, 405, cors);
+
+    // Browser callers must come from an allow-listed origin.
+    // Native/mobile requests send no Origin header — those bypass this and rely
+    // on APP_SHARED_SECRET below.
+    if (allowed.length && origin && !allowed.includes(origin)) {
+      return json({ error: "origin not allowed" }, 403, cors);
+    }
+
+    // Optional shared-secret gate (recommended for mobile builds).
     if (env.APP_SHARED_SECRET && request.headers.get("x-app-secret") !== env.APP_SHARED_SECRET) {
-      return json({ error: "unauthorized" }, 401);
+      return json({ error: "unauthorized" }, 401, cors);
+    }
+
+    // Per-IP rate limit — protects the Gemini bill from casual abuse.
+    if (!(await rateLimit(request, env))) {
+      return json({ error: "rate limited" }, 429, cors);
     }
 
     const url = new URL(request.url);
@@ -150,12 +209,12 @@ export default {
     try {
       body = await request.json();
     } catch {
-      return json({ error: "invalid JSON body" }, 400);
+      return json({ error: "invalid JSON body" }, 400, cors);
     }
 
     // Reject oversized image payloads (~6.7MB image as base64) to limit abuse/cost.
     if (typeof body.imageBase64 === "string" && body.imageBase64.length > 9_000_000) {
-      return json({ error: "image too large" }, 413);
+      return json({ error: "image too large" }, 413, cors);
     }
 
     try {
@@ -167,26 +226,25 @@ export default {
         } else if (typeof body.text === "string" && body.text.trim()) {
           parts.push({ text: `Extract the food items from this input:\n${body.text.slice(0, 8000)}` });
         } else {
-          return json({ processing_status: "EMPTY", items: [] });
+          return json({ processing_status: "EMPTY", items: [] }, 200, cors);
         }
-        return json(await callGemini(env, parts, INTAKE_SCHEMA));
+        return json(await callGemini(env, parts, INTAKE_SCHEMA), 200, cors);
       }
 
       if (url.pathname === "/v1/recipe") {
         const items = Array.isArray(body.expiring_items) ? body.expiring_items : [];
-        if (!items.length) return json({ error: "no expiring_items" }, 400);
+        if (!items.length) return json({ error: "no expiring_items" }, 400, cors);
         const staples = Array.isArray(body.staples) ? body.staples : [];
         const prompt =
           `Expiring items to use up: ${items.join(", ")}.\n` +
           (staples.length ? `Assume these staples are available: ${staples.join(", ")}.` : "");
-        return json(await callGemini(env, [{ text: prompt }], RECIPE_SCHEMA));
+        return json(await callGemini(env, [{ text: prompt }], RECIPE_SCHEMA), 200, cors);
       }
 
-      return json({ error: "not found" }, 404);
+      return json({ error: "not found" }, 404, cors);
     } catch (err) {
       console.error(err); // detail stays server-side (wrangler tail)
-      // Fail soft + generic: the client treats a non-2xx / empty as "offline".
-      return json({ error: "upstream error" }, 502);
+      return json({ error: "upstream error" }, 502, cors);
     }
   },
 };
