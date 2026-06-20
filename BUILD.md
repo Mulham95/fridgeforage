@@ -121,6 +121,22 @@ Or drag-and-drop `dist/` into Netlify, or `vercel deploy dist`, or push to a
   notifications are no-ops by design.
 - The Worker already sends `Access-Control-Allow-Origin: *`, so the deployed page
   can call it.
+- **Rebuild gotcha:** Metro caches the inlined `EXPO_PUBLIC_*` values. After
+  changing `.env`, rebuild with `--clear` or the old URL stays baked in:
+  `npx expo export -p web --output-dir dist --clear`.
+
+### Hosting on workers.dev (when pages.dev is blocked)
+
+Some networks/ISPs DNS-block `*.pages.dev` (e.g. it may resolve to `::1`). The
+`*.workers.dev` domain is usually not blocked, so the build is also served from a
+Worker via Cloudflare static assets (`web.wrangler.toml` + `web-worker.js`):
+
+```bash
+npm run deploy:web   # = expo export -p web --clear  &&  wrangler deploy --config web.wrangler.toml
+```
+
+Live at `https://fridgeforage-web.<subdomain>.workers.dev`. The AI proxy Worker
+lives separately at `https://fridgeforage-ai.<subdomain>.workers.dev`.
 
 ---
 

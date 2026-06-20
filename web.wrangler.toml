@@ -1,0 +1,9 @@
+name = "fridgeforage-web"
+main = "web-worker.js"
+compatibility_date = "2025-06-01"
+
+# Serve the Expo web export as static assets, with SPA fallback to index.html.
+[assets]
+directory = "./dist"
+binding = "ASSETS"
+not_found_handling = "single-page-application"
