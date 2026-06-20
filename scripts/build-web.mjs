@@ -13,6 +13,55 @@ const ENV = ".env";
 const BACKUP = ".env.bak.build-web";
 const STRIPPED = ["EXPO_PUBLIC_APP_SECRET"]; // never include these in web builds
 
+// Site metadata for LinkedIn / Twitter / Slack link previews. Edit here if the
+// canonical URL changes — these get injected into dist/index.html after export.
+const SITE_URL = "https://fridgeforage-web.fridgeforage-api.workers.dev";
+const TITLE = "FridgeForage — fight food waste with your fridge";
+const DESCRIPTION =
+  "A smart ingredient-expiry tracker. Snap a photo of your fridge and get a recipe from what you have. Built with Expo, TypeScript, and Google Gemini.";
+const OG_IMAGE = `${SITE_URL}/og.png`;
+const THEME_COLOR = "#10B981";
+
+function escapeAttr(s) {
+  return String(s).replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+}
+
+function injectMeta(htmlPath) {
+  if (!existsSync(htmlPath)) {
+    console.warn(`[build-web] ${htmlPath} not found; skipping meta injection`);
+    return;
+  }
+  let html = readFileSync(htmlPath, "utf8");
+  const t = escapeAttr(TITLE);
+  const d = escapeAttr(DESCRIPTION);
+  const u = escapeAttr(SITE_URL);
+  const img = escapeAttr(OG_IMAGE);
+  const tags = `
+    <meta name="description" content="${d}" />
+    <meta name="theme-color" content="${THEME_COLOR}" />
+    <link rel="canonical" href="${u}" />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="${u}" />
+    <meta property="og:title" content="${t}" />
+    <meta property="og:description" content="${d}" />
+    <meta property="og:image" content="${img}" />
+    <meta property="og:image:width" content="1024" />
+    <meta property="og:image:height" content="1024" />
+    <meta property="og:site_name" content="FridgeForage" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="${t}" />
+    <meta name="twitter:description" content="${d}" />
+    <meta name="twitter:image" content="${img}" />`;
+  // Replace the bare <title>…</title> so LinkedIn shows our richer headline.
+  html = html.replace(/<title>[^<]*<\/title>/i, `<title>${t}</title>`);
+  // Insert OG/twitter tags right before </head>, idempotently.
+  if (!/property="og:title"/.test(html)) {
+    html = html.replace(/<\/head>/i, `${tags}\n  </head>`);
+  }
+  writeFileSync(htmlPath, html);
+  console.log("[build-web] injected meta + OG/Twitter tags into", htmlPath);
+}
+
 let restored = false;
 function restore() {
   if (restored) return;
@@ -44,6 +93,7 @@ try {
     { stdio: "inherit", shell: true }
   );
   restore();
+  if (r.status === 0) injectMeta("dist/index.html");
   process.exit(r.status ?? 1);
 } catch (err) {
   console.error(err);

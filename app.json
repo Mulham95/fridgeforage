@@ -18,7 +18,11 @@
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
       "predictiveBackGestureEnabled": false,
-      "package": "com.fridgeforage.app"
+      "package": "com.fridgeforage.app",
+      "permissions": [
+        "android.permission.CAMERA",
+        "android.permission.RECORD_AUDIO"
+      ]
     },
     "web": {
       "bundler": "metro",
@@ -40,17 +44,28 @@
       "expo-sqlite",
       [
         "expo-camera",
-        { "cameraPermission": "Allow FridgeForage to use the camera to scan barcodes and your fridge." }
+        {
+          "cameraPermission": "Allow FridgeForage to use the camera to scan barcodes and your fridge."
+        }
       ],
       [
         "expo-image-picker",
-        { "cameraPermission": "Allow FridgeForage to photograph receipts." }
+        {
+          "cameraPermission": "Allow FridgeForage to photograph receipts."
+        }
       ],
       "expo-notifications"
     ],
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
-    }
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "eed8a1f8-e6d5-4138-ac0a-704550571a93"
+      }
+    },
+    "owner": "milo95"
   }
 }
