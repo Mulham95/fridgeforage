@@ -187,15 +187,15 @@ export default {
     if (request.method === "OPTIONS") return new Response(null, { headers: cors });
     if (request.method !== "POST") return json({ error: "POST only" }, 405, cors);
 
-    // Browser callers must come from an allow-listed origin.
-    // Native/mobile requests send no Origin header — those bypass this and rely
-    // on APP_SHARED_SECRET below.
-    if (allowed.length && origin && !allowed.includes(origin)) {
-      return json({ error: "origin not allowed" }, 403, cors);
-    }
-
-    // Optional shared-secret gate (recommended for mobile builds).
-    if (env.APP_SHARED_SECRET && request.headers.get("x-app-secret") !== env.APP_SHARED_SECRET) {
+    // Allow if EITHER (a) the request comes from an allow-listed browser origin,
+    // OR (b) it carries the matching APP_SHARED_SECRET (mobile builds bake this
+    // into the binary). Lets one Worker safely serve the public web bundle
+    // (gated by Origin/CORS) and the APK (gated by the secret) at the same time,
+    // without putting the secret in the public web JS.
+    const provided = request.headers.get("x-app-secret") || "";
+    const originAllowed = allowed.length === 0 || (!!origin && allowed.includes(origin));
+    const secretMatches = !!env.APP_SHARED_SECRET && provided === env.APP_SHARED_SECRET;
+    if (!originAllowed && !secretMatches) {
       return json({ error: "unauthorized" }, 401, cors);
     }
 

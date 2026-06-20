@@ -2,15 +2,21 @@
 // proxy, never in the app — this module only talks to that proxy.
 
 const ENDPOINT = process.env.EXPO_PUBLIC_FRIDGEFORAGE_API ?? "https://api.fridgeforage.app";
+// Only set in mobile/EAS builds — never in the public web build. The Worker
+// accepts EITHER a matching secret OR an allow-listed Origin, so the web bundle
+// passes via Origin/CORS without needing (or leaking) this value.
+const APP_SECRET = process.env.EXPO_PUBLIC_APP_SECRET || "";
 const TIMEOUT_MS = 20_000;
 
 async function postJson<T>(path: string, body: unknown): Promise<T> {
   const ctrl = new AbortController();
   const t = setTimeout(() => ctrl.abort(), TIMEOUT_MS);
   try {
+    const headers: Record<string, string> = { "Content-Type": "application/json" };
+    if (APP_SECRET) headers["x-app-secret"] = APP_SECRET;
     const res = await fetch(`${ENDPOINT}${path}`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers,
       body: JSON.stringify(body),
       signal: ctrl.signal,
     });
