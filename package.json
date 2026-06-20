@@ -43,7 +43,8 @@
     "test": "node --import ./test/register.mjs --test test/safetyLimits.test.ts test/validation.test.ts",
     "typecheck": "tsc --noEmit",
     "etl": "node etl/build_shelf_life.mjs ./etl/foodkeeper.json",
-    "deploy:web": "expo export -p web --output-dir dist --clear && wrangler deploy --config web.wrangler.toml"
+    "build:web": "node scripts/build-web.mjs",
+    "deploy:web": "node scripts/build-web.mjs && wrangler deploy --config web.wrangler.toml"
   },
   "private": true
 }
