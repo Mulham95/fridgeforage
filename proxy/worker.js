@@ -96,7 +96,12 @@ FOOD-SAFETY RULES (hard constraints):
 6. quantity is a number; default 1.0 if absent.
 7. Set barcode_gtin only if a GTIN/UPC is literally present, else null.
 
-For receipts/photos: discard non-food line items (bags, totals, tax, loyalty points). Normalize abbreviations ("ORG CHKN BRST 1LB" -> "Organic Chicken Breast"). If nothing usable, return processing_status "EMPTY" and an empty items array.
+Input may be one of THREE distinct kinds — treat each correctly:
+(a) RECEIPT TEXT or a PHOTO of a printed receipt → read the line items as text; discard non-food entries (bags, totals, tax, loyalty points); normalize abbreviations ("ORG CHKN BRST 1LB" → "Organic Chicken Breast").
+(b) PHOTO OF A FRIDGE INTERIOR or pantry shelf → identify each individually visible food item by eye (apples, milk carton, lettuce, eggs, ham, yogurt, etc.). Do NOT look for printed text — look at the actual food. List each distinct item once. Use everyday names (don't try to guess brands). Default quantity = 1 unless multiple of the same item are clearly visible.
+(c) TYPED text or voice transcript → parse as a free-form grocery list.
+
+For any kind: if you genuinely cannot identify food items (e.g. a blurry photo, a photo of something other than food, an empty fridge), return processing_status "EMPTY" with an empty items array. But if you see ANY food at all in a fridge photo, list what you see — don't return EMPTY because the photo is dim or the framing is awkward.
 
 For recipes: use ONLY the expiring items provided plus common staples; produce 4-8 short imperative steps; difficulty is Easy/Medium/Hard.`;
 
@@ -117,8 +122,10 @@ const INTAKE_SCHEMA = {
           unit: { type: "string", enum: UNIT_ENUM },
           storage_zone: { type: "string", enum: ["fridge", "pantry", "freezer"] },
           estimated_shelf_life_days: { type: "integer" },
-          // Gemini represents nullable via a type array (NOT `nullable: true`).
-          barcode_gtin: { type: ["string", "null"] },
+          // Plain string — not required, so the model can omit when no GTIN.
+          // (Gemini's API rejects both `nullable: true` and `type: ["string","null"]`
+          // depending on the version, so omission via not-required is the safest path.)
+          barcode_gtin: { type: "string" },
         },
         required: ["normalized_name", "quantity", "unit", "storage_zone", "estimated_shelf_life_days"],
         propertyOrdering: ["normalized_name", "quantity", "unit", "storage_zone", "estimated_shelf_life_days", "barcode_gtin"],
@@ -162,20 +169,25 @@ async function callGemini(env, parts, schema) {
         responseMimeType: "application/json",
         responseSchema: schema,
         temperature: 0.2,
-        maxOutputTokens: 2048,
+        maxOutputTokens: 4096,
       },
     }),
   });
 
   if (!res.ok) {
     const detail = await res.text().catch(() => "");
-    console.error(`Gemini ${res.status}: ${detail.slice(0, 500)}`); // server log only
-    throw new Error(`upstream_${res.status}`); // generic — never echoed to the client
+    console.error(`Gemini ${res.status}: ${detail.slice(0, 500)}`);
+    if (env.DEBUG === "1") throw new Error(`upstream_${res.status}: ${detail.slice(0, 400)}`);
+    throw new Error(`upstream_${res.status}`);
   }
   const data = await res.json();
   const text = data?.candidates?.[0]?.content?.parts?.[0]?.text;
-  if (!text) throw new Error("Gemini returned no content");
-  return JSON.parse(text); // schema-constrained, so this parses
+  if (!text) {
+    console.error("Gemini empty content. Full response:", JSON.stringify(data).slice(0, 600));
+    if (env.DEBUG === "1") throw new Error(`empty_content: ${JSON.stringify(data).slice(0, 400)}`);
+    throw new Error("Gemini returned no content");
+  }
+  return JSON.parse(text);
 }
 
 export default {
@@ -221,7 +233,16 @@ export default {
       if (url.pathname === "/v1/intake") {
         const parts = [];
         if (body.imageBase64) {
-          parts.push({ text: "Extract the food items from this image." });
+          // The model can't reliably tell a fridge photo from a receipt photo
+          // by content alone, so guide it: look at the image first, decide
+          // which kind it is, and identify visible food accordingly.
+          parts.push({
+            text:
+              "This image is either (a) a photo of the inside of a fridge / pantry shelf, or (b) a photo of a printed receipt. " +
+              "Look at it: if you see physical food items, list every distinct food you can identify by sight (e.g. milk, eggs, lettuce, apples, yogurt, cheese, leftovers). " +
+              "If you see printed receipt text, parse the line items. " +
+              "If neither, return an empty items list. Do not return empty just because lighting is poor — try to identify what you can see.",
+          });
           parts.push({ inlineData: { mimeType: "image/jpeg", data: body.imageBase64 } });
         } else if (typeof body.text === "string" && body.text.trim()) {
           parts.push({ text: `Extract the food items from this input:\n${body.text.slice(0, 8000)}` });
@@ -243,8 +264,9 @@ export default {
 
       return json({ error: "not found" }, 404, cors);
     } catch (err) {
-      console.error(err); // detail stays server-side (wrangler tail)
-      return json({ error: "upstream error" }, 502, cors);
+      console.error(err);
+      const detail = env.DEBUG === "1" ? String(err?.message || err) : "upstream error";
+      return json({ error: detail }, 502, cors);
     }
   },
 };
