@@ -121,9 +121,9 @@ export default function AddScreen() {
       </View>
 
       <Animated.View entering={FadeInDown.delay(240).duration(350)} style={styles.altRow}>
-        <PressScale onPress={() => router.push('/scan')} style={[styles.alt, { backgroundColor: c.surface }, shadow.card]}>
-          <Ionicons name="barcode-outline" size={26} color={c.primary} />
-          <Text style={[styles.altText, { color: c.text }]}>Scan barcode</Text>
+        <PressScale onPress={() => router.push('/fridge')} style={[styles.alt, { backgroundColor: c.surface }, shadow.card]}>
+          <Ionicons name="camera-outline" size={26} color={c.primary} />
+          <Text style={[styles.altText, { color: c.text }]}>Scan fridge</Text>
         </PressScale>
         <PressScale onPress={snapReceipt} style={[styles.alt, { backgroundColor: c.surface }, shadow.card]}>
           <Ionicons name="receipt-outline" size={26} color={c.primary} />

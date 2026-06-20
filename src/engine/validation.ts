@@ -95,8 +95,8 @@ export function toInventoryItems(rawItems: unknown, now = Date.now()): Inventory
 }
 
 /**
- * Construct a DB-ready item from already-trusted fields (FoodKeeper hit or a
- * barcode lookup), still passing the shelf life through the safety clamp.
+ * Construct a DB-ready item from already-trusted fields (FoodKeeper hit),
+ * still passing the shelf life through the safety clamp.
  */
 export function buildInventoryItem(
   fields: { name: string; quantity?: number; unit?: string; zone: StorageZone; days: number; gtin?: string | null },

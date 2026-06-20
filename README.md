@@ -1,9 +1,9 @@
 # 🥬 FridgeForage
 
-**A smart ingredient-expiry tracker that fights food waste.** Scan a barcode, snap
-a receipt, or type an item — FridgeForage figures out how long it stays fresh,
-reminds you before it expires, and generates a recipe to use up what's about to
-go bad.
+**A smart ingredient-expiry tracker that fights food waste.** Snap a photo of
+your fridge, scan a receipt, or type an item — FridgeForage figures out how long
+each item stays fresh, reminds you before it expires, and generates a recipe to
+use up what's about to go bad.
 
 > Built with React Native (Expo SDK 56), TypeScript, SQLite, and Google Gemini.
 > Local-first and offline-capable, with AI used only as a careful fallback.
@@ -50,8 +50,6 @@ caught a real regex bug letting "Strawberries" skip the berry shelf-life cap.
 - 📸 **Scan your fridge → instant recipe** — point the in-app camera at your open
   fridge; Gemini vision identifies the ingredients and suggests a dish you can
   make right now (and optionally adds them to your pantry).
-- 📷 **Barcode scanning** → product name via Open Food Facts, shelf life via the
-  local database (no AI call needed).
 - 🧾 **Receipt photo** → Gemini vision extracts and normalizes the line items.
 - ⌨️ **Manual add** with auto shelf-life lookup.
 - 🗓️ **Expiry tracking** with traffic-light freshness and local push reminders.
@@ -64,16 +62,16 @@ caught a real regex bug letting "Strawberries" skip the berry shelf-life cap.
 | App | React Native 0.85, Expo SDK 56, Expo Router (file-based) |
 | Language | TypeScript (strict) |
 | Local storage | expo-sqlite (async API) |
-| Device | expo-camera (barcode), expo-image-picker, expo-notifications |
+| Device | expo-camera, expo-image-picker, expo-notifications |
 | AI | Google Gemini (`gemini-2.5-flash`) via Cloudflare Worker proxy |
-| Data | Open Food Facts API · USDA FoodKeeper dataset (ETL) |
+| Data | USDA FoodKeeper-style shelf-life seed (ETL pipeline included) |
 
 ## Project layout
 
 ```
-src/app/         Screens (expo-router): pantry, add, scan, recipe
+src/app/         Screens (expo-router): pantry, add, edit, fridge, recipe
 src/engine/      Core logic — DB, shelf-life lookup, AI client, validation,
-                 safety clamps, intake orchestration, notifications, barcode
+                 safety clamps, intake orchestration, notifications
 src/lib/         Presentation helpers
 proxy/           Cloudflare Worker that holds the Gemini key (worker.js)
 prompt/          System prompt + JSON schemas for the AI

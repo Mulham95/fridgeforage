@@ -45,7 +45,7 @@
       [
         "expo-camera",
         {
-          "cameraPermission": "Allow FridgeForage to use the camera to scan barcodes and your fridge."
+          "cameraPermission": "Allow FridgeForage to use the camera to scan your fridge."
         }
       ],
       [

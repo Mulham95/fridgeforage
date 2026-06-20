@@ -147,7 +147,7 @@ export default function Dashboard() {
               <Text style={styles.celebrateEmoji}>🛒</Text>
               <Text style={[styles.celebrateTitle, { color: c.text }]}>Your pantry is empty</Text>
               <Text style={[styles.celebrateSub, { color: c.textMuted, textAlign: 'center' }]}>
-                Add groceries, scan a barcode, or snap a receipt to get started.
+                Add groceries, snap a receipt, or scan your fridge to get started.
               </Text>
             </Animated.View>
           ) : (
@@ -169,8 +169,8 @@ export default function Dashboard() {
       {/* ---- Floating action bar ---- */}
       <View style={[styles.fab, { paddingBottom: insets.bottom + space.sm }]}>
         <View style={[styles.fabBar, { backgroundColor: c.surface }, shadow.floating]}>
-          <PressScale onPress={() => router.push('/scan')} style={[styles.fabIcon, { backgroundColor: c.surfaceAlt }]}>
-            <Ionicons name="barcode-outline" size={22} color={c.text} />
+          <PressScale onPress={() => router.push('/fridge')} style={[styles.fabIcon, { backgroundColor: c.surfaceAlt }]}>
+            <Ionicons name="camera-outline" size={22} color={c.text} />
           </PressScale>
           <PressScale onPress={() => router.push('/add')} style={styles.fabAddWrap}>
             <LinearGradient colors={gradients.primary} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.fabAdd}>

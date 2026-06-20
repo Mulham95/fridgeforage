@@ -2,7 +2,7 @@
 
 Three stages: **(A)** deploy the AI proxy, **(B)** point the app at it, **(C)**
 build the APK and install it. Stages A and the AI features are optional — the app
-runs fully (barcode + local database + reminders) without them. The AI bits
+runs fully (local database + reminders) without them. The AI bits
 (receipt scan, recipe generation) need the proxy.
 
 Everything here runs on Windows. No Android Studio or Mac needed — EAS builds in
@@ -21,8 +21,8 @@ npm run web        # opens http://localhost:8081
 
 On web, SQLite is replaced by a `localStorage` store and notifications are no-ops
 (see `src/engine/*.web.ts`), so the full UI, pantry, add/edit, search, and recipe
-flows all work. Add/receipt/recipe AI features need the proxy (stage A); barcode
-scanning needs a real camera, so it's best tested on the phone.
+flows all work. The Add/receipt/fridge-scan/recipe AI features need the proxy
+(stage A) — fridge-scan also needs a real camera, so it's best tested on the phone.
 
 ---
 
@@ -116,7 +116,7 @@ npx wrangler pages deploy dist --project-name fridgeforage
 Or drag-and-drop `dist/` into Netlify, or `vercel deploy dist`, or push to a
 `gh-pages` branch. Notes:
 - Deployed sites are served over **HTTPS**, so the in-browser **camera works**
-  (barcode + fridge scan) — unlike some `localhost` setups.
+  (fridge scan) — unlike some `localhost` setups.
 - On web, data lives in the browser's `localStorage` (per-device), and OS
   notifications are no-ops by design.
 - The Worker already sends `Access-Control-Allow-Origin: *`, so the deployed page

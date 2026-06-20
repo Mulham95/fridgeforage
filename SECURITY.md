@@ -9,7 +9,7 @@ data layer, and the Cloudflare Worker proxy.
 |---|---|
 | Secrets in repo | ✅ None. `.env` is gitignored and absent from history; no hardcoded keys. |
 | API key exposure | ✅ The Gemini key lives only in the Cloudflare Worker, never in the app bundle. |
-| Network | ✅ All requests are HTTPS (Open Food Facts, the proxy). |
+| Network | ✅ All requests are HTTPS (the proxy is the only outbound). |
 | Untrusted AI output | ✅ Every model field is coerced/validated client-side before it can touch SQLite (`validation.ts`), and shelf-life values are clamped (`safetyLimits.ts`). |
 | Permissions | ✅ Minimal — camera and notifications only. |
 | Dependency CVEs (runtime) | ✅ None shipped in the app bundle. |
