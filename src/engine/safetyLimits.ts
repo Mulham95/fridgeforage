@@ -1,11 +1,6 @@
-/**
- * Food-safety clamps. The LLM is an UNTRUSTED estimator: a hallucinated
- * shelf-life number for raw chicken is a food-poisoning vector, not a UX bug.
- * Every shelf-life value that comes from the model passes through clampShelfLife
- * before it is ever written to the inventory or used to schedule a reminder.
- *
- * Rule of thumb encoded here: round DOWN, never up; cap perishables hard.
- */
+// Food-safety clamps. The LLM is untrusted — a hallucinated shelf-life for raw
+// chicken is a food-poisoning vector. Every model-supplied shelf-life value
+// passes through clampShelfLife before it can reach the DB or a notification.
 import type { StorageZone } from "./db";
 
 interface Ceiling {

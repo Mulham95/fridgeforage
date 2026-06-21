@@ -1,11 +1,4 @@
-/**
- * "Scan your fridge → get a dish" flow.
- *
- * Takes a photo of the fridge interior, asks the AI vision model to identify the
- * food items in it (reusing INVENTORY_INTAKE), then generates a recipe from the
- * detected ingredients. Detection does NOT auto-save — the user decides whether
- * to add the items to their pantry afterwards.
- */
+// Fridge photo → ingredient list → recipe. Two AI calls, never auto-saves.
 import { insertItems, type InventoryItem } from './db';
 import { aiGenerateRecipe, aiInventoryIntake, AiClientError, type RecipeResult } from './llm';
 import { scheduleExpiryNotifications } from './notifications';

@@ -1,11 +1,5 @@
-/**
- * Web implementation of the data layer. Metro picks this `.web.ts` over `db.ts`
- * when bundling for web, so the browser build never touches expo-sqlite (which
- * needs cross-origin-isolation headers to work on web).
- *
- * Storage is an in-memory array persisted to localStorage — plenty for testing
- * the UI and flows in a browser before building the native APK.
- */
+// Web data layer (Metro picks .web.ts over .ts on web). localStorage-backed
+// so the browser build never imports expo-sqlite.
 
 export type StorageZone = 'fridge' | 'pantry' | 'freezer';
 
@@ -47,13 +41,8 @@ export async function getDb(): Promise<never> {
   throw new Error('SQLite is not available on web');
 }
 
-export async function ensureShelfLifeSeeded(_seedSql: string): Promise<void> {
-  /* shelf-life data lives in shelfLife.web.ts on web */
-}
-
-export async function initDatabase(_seedSql: string): Promise<void> {
-  /* nothing to migrate on web */
-}
+// On web the shelf-life data lives in shelfLife.web.ts (parsed JS), not SQLite.
+export async function initDatabase(_seedSql: string): Promise<void> {}
 
 export async function insertItems(newItems: InventoryItem[]): Promise<void> {
   for (const it of newItems) {

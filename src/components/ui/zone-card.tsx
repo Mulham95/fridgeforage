@@ -1,4 +1,4 @@
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text } from 'react-native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 
 import { useColors, font, radius, shadow, space } from '@/theme/tokens';

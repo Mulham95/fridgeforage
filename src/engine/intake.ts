@@ -1,18 +1,7 @@
-/**
- * Intake orchestration — the heart of the "feels fast, costs little, stays safe"
- * flow from the blueprint:
- *
- *   1. AI parses the raw input into normalized item names (this is the one thing
- *      only the model can do well — OCR cleanup + naming).
- *   2. For each item, try the LOCAL FoodKeeper DB first (free, instant, trusted).
- *   3. Only items with no local match keep the model's estimate — clamped by the
- *      food-safety limits.
- *   4. Everything is validated/coerced, persisted, and notifications scheduled.
- *
- * Why split it this way: parsing messy text is a model strength; shelf-life
- * numbers are a model *hazard*. So we let the model name things, but we override
- * its dates with USDA data whenever we can.
- */
+// Intake orchestration. Model parses raw input into names (its strength);
+// local FoodKeeper DB decides shelf life when it can (free, instant, trusted);
+// the model's date estimate is used only on a miss and always clamped, because
+// shelf-life numbers from an LLM are a food-safety hazard.
 import { insertItems, type InventoryItem, type StorageZone } from "./db";
 import { aiInventoryIntake } from "./llm";
 import { lookupShelfLife } from "./shelfLife";

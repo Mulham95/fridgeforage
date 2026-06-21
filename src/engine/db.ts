@@ -41,20 +41,17 @@ export async function getDb(): Promise<SQLite.SQLiteDatabase> {
   return _db;
 }
 
-/**
- * Seed the reference table once. `seedSql` is the contents of the bundled
- * shelf_life_rules.sql asset (load it via expo-asset / FileSystem).
- */
-export async function ensureShelfLifeSeeded(seedSql: string): Promise<void> {
+// Seeds shelf-life rules on first launch. Idempotent — skips if already populated.
+async function ensureShelfLifeSeeded(seedSql: string): Promise<void> {
   const db = await getDb();
   const seeded = await db.getFirstAsync<{ c: number }>(
     "SELECT COUNT(*) AS c FROM sqlite_master WHERE type='table' AND name='shelf_life_rules'"
   );
   if (seeded && seeded.c > 0) {
     const rows = await db.getFirstAsync<{ c: number }>("SELECT COUNT(*) AS c FROM shelf_life_rules");
-    if (rows && rows.c > 0) return; // already populated
+    if (rows && rows.c > 0) return;
   }
-  await db.execAsync(seedSql); // the .sql wraps its own DROP/CREATE/INSERT in a txn
+  await db.execAsync(seedSql);
 }
 
 export async function insertItems(items: InventoryItem[]): Promise<void> {

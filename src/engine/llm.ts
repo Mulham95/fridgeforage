@@ -79,11 +79,9 @@ async function postJson<T>(path: string, body: unknown): Promise<T> {
   throw new AiClientError("upstream", "unreachable");
 }
 
-/**
- * Defensive parse: the proxy SHOULD return the input object directly, but if
- * anything upstream hands back a text blob with the JSON embedded, recover it.
- */
-export function extractJson(payload: unknown): any {
+// Defensive parse: proxy returns parsed JSON, but recover gracefully if anything
+// upstream hands back a text blob with JSON embedded (e.g. wrapped in ``` fences).
+function extractJson(payload: unknown): any {
   if (payload && typeof payload === "object") return payload;
   if (typeof payload === "string") {
     const cleaned = payload.replace(/```json|```/g, "").trim();
