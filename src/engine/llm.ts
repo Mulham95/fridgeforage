@@ -6,32 +6,82 @@ const ENDPOINT = process.env.EXPO_PUBLIC_FRIDGEFORAGE_API ?? "https://api.fridge
 // accepts EITHER a matching secret OR an allow-listed Origin, so the web bundle
 // passes via Origin/CORS without needing (or leaking) this value.
 const APP_SECRET = process.env.EXPO_PUBLIC_APP_SECRET || "";
-const TIMEOUT_MS = 20_000;
+const TIMEOUT_MS = 25_000;
 
-async function postJson<T>(path: string, body: unknown): Promise<T> {
+/**
+ * Typed error so callers can show the right message. `kind` is the dimension
+ * the UI cares about; `status` is the raw HTTP status if available.
+ */
+export class AiClientError extends Error {
+  kind: "rate_limit" | "auth" | "network" | "upstream";
+  status?: number;
+  retryAfterSec?: number;
+  constructor(kind: AiClientError["kind"], message: string, status?: number, retryAfterSec?: number) {
+    super(message);
+    this.kind = kind;
+    this.status = status;
+    this.retryAfterSec = retryAfterSec;
+  }
+}
+
+async function rawFetch(path: string, body: unknown): Promise<Response> {
   const ctrl = new AbortController();
   const t = setTimeout(() => ctrl.abort(), TIMEOUT_MS);
   try {
     const headers: Record<string, string> = { "Content-Type": "application/json" };
     if (APP_SECRET) headers["x-app-secret"] = APP_SECRET;
-    const res = await fetch(`${ENDPOINT}${path}`, {
+    return await fetch(`${ENDPOINT}${path}`, {
       method: "POST",
       headers,
       body: JSON.stringify(body),
       signal: ctrl.signal,
     });
-    if (!res.ok) throw new Error(`AI endpoint ${res.status}`);
-    return (await res.json()) as T;
   } finally {
     clearTimeout(t);
   }
 }
 
+const sleep = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
+
 /**
- * Defensive parse: the proxy SHOULD return the tool_use input directly, but if
+ * POST with one auto-retry on 429 (using the Retry-After header from the proxy,
+ * capped at 8s so a fridge-scan flow doesn't hang on the user). Throws an
+ * AiClientError tagged with the failure kind so the UI can render a clear
+ * message instead of "Couldn't reach the AI".
+ */
+async function postJson<T>(path: string, body: unknown): Promise<T> {
+  for (let attempt = 0; attempt < 2; attempt++) {
+    let res: Response;
+    try {
+      res = await rawFetch(path, body);
+    } catch (e: any) {
+      // fetch threw — network/timeout/DNS. No retry, surface as 'network'.
+      throw new AiClientError("network", e?.message || "no connection");
+    }
+
+    if (res.ok) return (await res.json()) as T;
+
+    if (res.status === 429 && attempt === 0) {
+      const ra = parseInt(res.headers.get("Retry-After") || "5", 10);
+      await sleep(Math.min(Math.max(ra, 2), 8) * 1000);
+      continue; // retry once
+    }
+
+    if (res.status === 429) {
+      throw new AiClientError("rate_limit", "too many requests", 429,
+        parseInt(res.headers.get("Retry-After") || "60", 10));
+    }
+    if (res.status === 401 || res.status === 403) {
+      throw new AiClientError("auth", `auth failed (${res.status})`, res.status);
+    }
+    throw new AiClientError("upstream", `upstream ${res.status}`, res.status);
+  }
+  throw new AiClientError("upstream", "unreachable");
+}
+
+/**
+ * Defensive parse: the proxy SHOULD return the input object directly, but if
  * anything upstream hands back a text blob with the JSON embedded, recover it.
- * This is the belt to the tool-schema's suspenders — "the parser crashed"
- * must never be reachable.
  */
 export function extractJson(payload: unknown): any {
   if (payload && typeof payload === "object") return payload;
@@ -60,17 +110,26 @@ export interface IntakeResult {
 }
 
 /**
- * @param input  either OCR'd receipt text or a base64 JPEG (resized client-side
- *               to <=1200px / 75% quality before calling — see README).
+ * @param input  either OCR'd receipt text or a base64 JPEG.
+ * @throws AiClientError on failure (caller decides what to show).
  */
-export async function aiInventoryIntake(input: { text?: string; imageBase64?: string }): Promise<IntakeResult> {
+export async function aiInventoryIntake(
+  input: { text?: string; imageBase64?: string },
+  allowFallback = false
+): Promise<IntakeResult> {
   try {
     const raw = await postJson<unknown>("/v1/intake", input);
     const parsed = extractJson(raw);
-    if (!parsed || !Array.isArray(parsed.items)) return { processing_status: "EMPTY", items: [] };
+    if (!parsed || !Array.isArray(parsed.items)) {
+      if (allowFallback) return { processing_status: "EMPTY", items: [] };
+      throw new AiClientError("upstream", "invalid intake response");
+    }
     return parsed as IntakeResult;
-  } catch {
-    return { processing_status: "EMPTY", items: [] }; // offline / failure -> empty, UI handles it
+  } catch (error) {
+    if (allowFallback && !(error instanceof AiClientError && error.kind === "rate_limit")) {
+      return { processing_status: "EMPTY", items: [] };
+    }
+    throw error;
   }
 }
 
@@ -84,11 +143,33 @@ export interface RecipeResult {
   mobile_ui_steps: string[];
 }
 
-export async function aiGenerateRecipe(expiringItemNames: string[], staples: string[] = []): Promise<RecipeResult | null> {
-  try {
-    const raw = await postJson<unknown>("/v1/recipe", { expiring_items: expiringItemNames, staples });
-    return extractJson(raw) as RecipeResult | null;
-  } catch {
-    return null;
+/**
+ * @throws AiClientError on failure. (Used to swallow errors and return null,
+ *         which is why the UI could only say "couldn't reach".)
+ */
+export async function aiGenerateRecipe(
+  expiringItemNames: string[],
+  staples: string[] = []
+): Promise<RecipeResult> {
+  const raw = await postJson<unknown>("/v1/recipe", { expiring_items: expiringItemNames, staples });
+  const r = extractJson(raw) as RecipeResult | null;
+  if (!r) throw new AiClientError("upstream", "invalid recipe response");
+  return r;
+}
+
+/** Map any error from this module into a short user-facing string. */
+export function describeAiError(err: unknown): string {
+  if (err instanceof AiClientError) {
+    switch (err.kind) {
+      case "rate_limit":
+        return "Too many AI requests right now — please wait about a minute and try again.";
+      case "auth":
+        return "The app couldn't authenticate with the AI service.";
+      case "network":
+        return "No connection — check your internet and try again.";
+      default:
+        return "The AI service had a problem. Please try again in a moment.";
+    }
   }
+  return "Something went wrong. Please try again.";
 }

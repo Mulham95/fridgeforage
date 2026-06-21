@@ -9,6 +9,7 @@ import { GradientButton } from '@/components/ui/gradient-button';
 import { PressScale } from '@/components/ui/press-scale';
 import { useColors, font, gradients, radius, shadow, space } from '@/theme/tokens';
 import { addByName, runIntake } from '@/engine/intake';
+import { describeAiError } from '@/engine/llm';
 import type { StorageZone } from '@/engine/db';
 
 const ZONES: (StorageZone | 'auto')[] = ['auto', 'fridge', 'pantry', 'freezer'];
@@ -55,7 +56,7 @@ export default function AddScreen() {
         router.back();
       }
     } catch (e) {
-      Alert.alert('Receipt scan failed', String(e));
+      Alert.alert('Receipt scan failed', describeAiError(e));
     } finally {
       setBusy(false);
     }

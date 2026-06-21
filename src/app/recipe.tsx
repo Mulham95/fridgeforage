@@ -8,7 +8,7 @@ import Animated, { FadeIn, FadeInDown } from 'react-native-reanimated';
 import { GradientButton } from '@/components/ui/gradient-button';
 import { useColors, font, gradients, radius, shadow, space } from '@/theme/tokens';
 import { getAllItems, getExpiringItems } from '@/engine/db';
-import { aiGenerateRecipe, type RecipeResult } from '@/engine/llm';
+import { aiGenerateRecipe, describeAiError, type RecipeResult } from '@/engine/llm';
 
 export default function RecipeScreen() {
   const c = useColors();
@@ -31,11 +31,9 @@ export default function RecipeScreen() {
     setError(null);
     setRecipe(null);
     try {
-      const r = await aiGenerateRecipe(names);
-      if (!r) setError('Could not reach the recipe service. Make sure the AI proxy is configured.');
-      else setRecipe(r);
+      setRecipe(await aiGenerateRecipe(names));
     } catch (e) {
-      setError(String(e));
+      setError(describeAiError(e));
     } finally {
       setBusy(false);
     }

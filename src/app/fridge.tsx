@@ -1,21 +1,23 @@
-import { useRef, useState } from 'react';
-import { ActivityIndicator, Alert, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import { useRouter } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
+import { useRef, useState, type ElementRef } from 'react';
+import { ActivityIndicator, Alert, ScrollView, StyleSheet, Text, View } from 'react-native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 
 import { GradientButton } from '@/components/ui/gradient-button';
 import { PressScale } from '@/components/ui/press-scale';
 import { RecipeCard } from '@/components/ui/recipe-card';
-import { useColors, font, gradients, radius, shadow, space } from '@/theme/tokens';
-import { scanFridge, saveDetected, type FridgeScanResult } from '@/engine/fridgeScan';
+import { saveDetected, scanFridge, type FridgeScanResult } from '@/engine/fridgeScan';
+import { font, gradients, radius, shadow, space, useColors } from '@/theme/tokens';
 
 export default function FridgeScreen() {
   const c = useColors();
   const router = useRouter();
   const [permission, requestPermission] = useCameraPermissions();
-  const cameraRef = useRef<CameraView>(null);
+  const cameraRef = useRef<ElementRef<typeof CameraView> | null>(null);
+  const [cameraReady, setCameraReady] = useState(false);
+  const [cameraError, setCameraError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [saved, setSaved] = useState(false);
   const [result, setResult] = useState<FridgeScanResult | null>(null);
@@ -36,15 +38,20 @@ export default function FridgeScreen() {
   }
 
   const capture = async () => {
-    if (!cameraRef.current || busy) return;
+    if (!cameraRef.current || busy || cameraError) return;
+    if (!cameraReady) {
+      Alert.alert('Camera not ready', 'Please wait until the camera preview appears before scanning.');
+      return;
+    }
     setBusy(true);
     try {
-      const photo = await cameraRef.current.takePictureAsync({ base64: true, quality: 0.4 });
+      const photo = await cameraRef.current.takePictureAsync({ base64: true, quality: 0.6 });
       if (!photo?.base64) throw new Error('Could not capture the photo.');
       const r = await scanFridge(photo.base64);
       setResult(r);
       setSaved(false);
     } catch (e) {
+      setCameraError(String(e));
       Alert.alert('Scan failed', String(e));
     } finally {
       setBusy(false);
@@ -63,14 +70,24 @@ export default function FridgeScreen() {
       <ScrollView style={{ backgroundColor: c.bg }} contentContainerStyle={styles.resultContent} showsVerticalScrollIndicator={false}>
         {result.status !== 'ok' ? (
           <Animated.View entering={FadeInDown.springify().damping(15)} style={[styles.notice, { backgroundColor: c.surface }, shadow.card]}>
-            <Ionicons name={result.status === 'no_items' ? 'search' : 'cloud-offline'} size={32} color={c.textMuted} />
+            <Ionicons
+              name={result.status === 'no_items' ? 'search' : result.status === 'rate_limit' ? 'hourglass' : 'cloud-offline'}
+              size={32}
+              color={c.textMuted}
+            />
             <Text style={[styles.noticeTitle, { color: c.text }]}>
-              {result.status === 'no_items' ? 'No ingredients spotted' : 'Couldn’t reach the AI'}
+              {result.status === 'no_items'
+                ? 'No ingredients spotted'
+                : result.status === 'rate_limit'
+                ? 'Too many requests right now'
+                : 'Couldn’t reach the AI'}
             </Text>
             <Text style={[styles.noticeText, { color: c.textMuted }]}>
               {result.status === 'no_items'
                 ? 'Try a clearer, well-lit photo of your open fridge.'
-                : 'The recipe service needs the AI proxy configured. Check your connection and try again.'}
+                : result.status === 'rate_limit'
+                ? 'The free AI quota is busy. Please wait about a minute and tap Scan again.'
+                : 'Check your internet connection and try again.'}
             </Text>
           </Animated.View>
         ) : (
@@ -126,7 +143,16 @@ export default function FridgeScreen() {
   // ---- Camera view ----
   return (
     <View style={styles.cameraContainer}>
-      <CameraView ref={cameraRef} style={StyleSheet.absoluteFill} facing="back" />
+      <CameraView
+        ref={cameraRef}
+        style={StyleSheet.absoluteFill}
+        facing="back"
+        onCameraReady={() => {
+          setCameraReady(true);
+          setCameraError(null);
+        }}
+        onMountError={(event) => setCameraError(event.message ?? 'Camera failed to start')}
+      />
       <View style={styles.overlay} pointerEvents="none">
         <View style={styles.frame} />
         <View style={styles.hintPill}>
@@ -134,6 +160,11 @@ export default function FridgeScreen() {
           <Text style={styles.hint}>Point at your open fridge</Text>
         </View>
       </View>
+      {cameraError ? (
+        <View style={styles.cameraError} pointerEvents="none">
+          <Text style={styles.cameraErrorText}>Camera failed to start. Please restart the app and grant camera permissions.</Text>
+        </View>
+      ) : null}
       <View style={styles.captureBar}>
         {busy ? (
           <View style={styles.busyPill}>
@@ -191,4 +222,13 @@ const styles = StyleSheet.create({
   resultActions: { gap: space.md, marginTop: space.sm },
   doneBtn: { alignItems: 'center', paddingVertical: space.sm },
   doneText: { fontSize: 14, fontFamily: font.semibold },
+  cameraError: {
+    position: 'absolute', left: 0, right: 0, bottom: 120,
+    paddingHorizontal: space.lg,
+    alignItems: 'center', justifyContent: 'center',
+  },
+  cameraErrorText: {
+    color: '#fff', fontSize: 14, fontWeight: '600', textAlign: 'center',
+    backgroundColor: 'rgba(255,0,0,0.8)', padding: space.sm, borderRadius: radius.md,
+  },
 });

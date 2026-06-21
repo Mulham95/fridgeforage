@@ -177,8 +177,12 @@ async function callGemini(env, parts, schema) {
   if (!res.ok) {
     const detail = await res.text().catch(() => "");
     console.error(`Gemini ${res.status}: ${detail.slice(0, 500)}`);
-    if (env.DEBUG === "1") throw new Error(`upstream_${res.status}: ${detail.slice(0, 400)}`);
-    throw new Error(`upstream_${res.status}`);
+    // Bubble up rate-limit specifically so the client can show a useful message
+    // and retry with backoff (instead of a generic "couldn't reach the AI").
+    const err = new Error(env.DEBUG === "1" ? `upstream_${res.status}: ${detail.slice(0, 400)}` : `upstream_${res.status}`);
+    err.upstreamStatus = res.status;
+    err.retryAfter = res.headers.get("retry-after") || (res.status === 429 ? "60" : null);
+    throw err;
   }
   const data = await res.json();
   const text = data?.candidates?.[0]?.content?.parts?.[0]?.text;
@@ -265,8 +269,18 @@ export default {
       return json({ error: "not found" }, 404, cors);
     } catch (err) {
       console.error(err);
-      const detail = env.DEBUG === "1" ? String(err?.message || err) : "upstream error";
-      return json({ error: detail }, 502, cors);
+      const detail = env.DEBUG === "1" ? String(err?.message || err) : null;
+      // Pass through 429 specifically (with Retry-After) so the client can
+      // distinguish rate limiting from real outages and back off properly.
+      if (err?.upstreamStatus === 429) {
+        const ra = err.retryAfter || "60";
+        return json(
+          { error: detail || "rate limited — try again in a minute" },
+          429,
+          { ...cors, "Retry-After": ra }
+        );
+      }
+      return json({ error: detail || "upstream error" }, 502, cors);
     }
   },
 };

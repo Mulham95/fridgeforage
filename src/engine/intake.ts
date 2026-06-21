@@ -28,7 +28,11 @@ export interface IntakeOutcome {
 }
 
 export async function runIntake(input: { text?: string; imageBase64?: string }): Promise<IntakeOutcome> {
-  const ai = await aiInventoryIntake(input);
+  // allowFallback=true: transient AI failures (network, upstream) silently
+  // return empty so the receipt-snap flow shows "Nothing found" instead of
+  // crashing. Rate-limit errors still throw so the caller can show a clear
+  // "wait a minute" message.
+  const ai = await aiInventoryIntake(input, true);
   const now = Date.now();
 
   const items: InventoryItem[] = [];
@@ -94,7 +98,8 @@ export async function addByName(
     );
   } else {
     // Miss: try the model, then fall back to a conservative default.
-    const ai = await aiInventoryIntake({ text: trimmed });
+    // allowFallback=true so AI outages don't block adding an item by name.
+    const ai = await aiInventoryIntake({ text: trimmed }, true);
     const raw = ai.items?.[0];
     item = raw ? toInventoryItem({ ...(raw as object), quantity } as any, now) : null;
     if (!item) {
